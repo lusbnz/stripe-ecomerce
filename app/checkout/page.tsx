@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCartStore } from "@/store/cart-store";
 import { checkoutAction } from "./checkout-action";
+import { formatNumber } from "@/lib/common";
 
 export default function CheckoutPage() {
   const { items, removeItem, addItem } = useCartStore();
@@ -34,7 +35,7 @@ export default function CheckoutPage() {
                 <div className="flex justify-between">
                   <span className="font-medium">{item.name}</span>
                   <span className="font-semibold">
-                    {((item.price * item.quantity) )} VNĐ
+                    {formatNumber(item.price * item.quantity)} VNĐ
                   </span>
                 </div>
                 <div className="flex items-center gap-2">

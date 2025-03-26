@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import Image from "next/image";
 import { Button } from "./ui/button";
+import { formatNumber } from "@/lib/common";
 
 interface Props {
   product: Stripe.Product;
@@ -36,7 +37,7 @@ export const ProductCard = ({ product }: Props) => {
           )}
           {price && price.unit_amount && (
             <p className="text-lg font-semibold text-gray-900">
-              {(price.unit_amount)} VNĐ
+              {formatNumber(price.unit_amount)} VNĐ
             </p>
           )}
           <Button className="mt-4 bg-black text-white">View Details</Button>

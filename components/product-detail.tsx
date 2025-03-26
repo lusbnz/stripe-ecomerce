@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { useCartStore } from "@/store/cart-store";
-
+import { formatNumber } from "@/lib/common";
 interface Props {
   product: Stripe.Product;
 }
@@ -45,7 +45,7 @@ export const ProductDetail = ({ product }: Props) => {
         )}
         {price && price.unit_amount && (
           <p className="text-lg font-semibold text-gray-900">
-            {(price.unit_amount )} VNĐ
+            {formatNumber(price.unit_amount)} VNĐ
           </p>
         )}
         <div className="flex items-center space-x-4">
