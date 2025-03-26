@@ -11,42 +11,59 @@ interface Props {
 
 export const Carousel = ({ products }: Props) => {
   const [current, setCurrent] = useState<number>(0);
+  const itemsToShow = 3;
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % products.length);
+      setCurrent((prev) => (prev + itemsToShow) % products.length);
     }, 3000);
 
     return () => clearInterval(interval);
   }, [products.length]);
 
-  const currentProduct = products[current];
+  const getVisibleProducts = () => {
+    return [
+      products[current % products.length],
+      products[(current + 1) % products.length],
+      products[(current + 2) % products.length],
+    ];
+  };
 
-  const price = currentProduct?.default_price as Stripe.Price;
+  const visibleProducts = getVisibleProducts();
 
   return (
-    <Card className="relative overflow-hidden rounded-lg shadow-md border-gray-300">
-      {currentProduct?.images && currentProduct.images[0] && (
-        <div className="relative h-80 w-full">
-          <Image
-            src={currentProduct?.images[0]}
-            alt={currentProduct?.name}
-            layout="fill"
-            objectFit="cover"
-            className="transition-opacity duration-500 ease-in-out"
-          />
-        </div>
-      )}
-      <CardContent className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50">
-        <CardTitle className="text-3xl font-bold text-white mb-2">
-          {currentProduct?.name}
-        </CardTitle>
-        {price && price.unit_amount && (
-          <p className="text-xl text-white">
-            {(price.unit_amount )} VNĐ
-          </p>
-        )}
-      </CardContent>
-    </Card>
+    <div className="flex gap-4">
+      {visibleProducts.map((product) => {
+        const price = product?.default_price as Stripe.Price;
+        return (
+          <Card
+            key={product.id}
+            className="relative overflow-hidden rounded-lg shadow-md border-gray-300 w-1/3"
+          >
+            {product?.images && product.images[0] && (
+              <div className="relative h-60 w-full">
+                <Image
+                  src={product?.images[0]}
+                  alt={product?.name}
+                  layout="fill"
+                  objectFit="cover"
+                  className="transition-opacity duration-500 ease-in-out"
+                />
+              </div>
+            )}
+            <CardContent className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50">
+              <CardTitle className="text-2xl font-bold text-white mb-2">
+                {product?.name}
+              </CardTitle>
+              {price && price.unit_amount && (
+                <p className="text-lg text-white">
+                  {price.unit_amount} VNĐ
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
   );
 };

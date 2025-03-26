@@ -36,10 +36,7 @@ export default async function Home() {
           </div>
           <Image
             alt="Hero Image"
-            src={
-              products?.data[0]?.images[0] ||
-              "https://images.pexels.com/photos/5593515/pexels-photo-5593515.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
-            }
+            src={products?.data[0]?.images[0]}
             className="rounded"
             width={450}
             height={450}
