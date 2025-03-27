@@ -59,7 +59,7 @@ export default function CheckoutPage() {
             ))}
           </ul>
           <div className="mt-4 border-t pt-2 text-lg font-semibold">
-            Total: {(total )} VND
+            Total: {formatNumber(total)} VND
           </div>
         </CardContent>
       </Card>
