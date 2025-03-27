@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/navbar";
+import { ClerkProvider } from "@clerk/nextjs";
 
 export const metadata: Metadata = {
   title: "MyStore",
@@ -13,13 +14,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="flex min-h-full flex-col bg-white">
-        <Navbar />
-        <main className="flex-grow container mx-auto px-4 py-8">
-          {children}
-        </main>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body className="flex min-h-full flex-col bg-white">
+          <Navbar />
+          <main className="flex-grow container mx-auto px-4 py-8">
+            {children}
+          </main>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

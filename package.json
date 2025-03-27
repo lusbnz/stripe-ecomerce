@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.12.11",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-slot": "^1.1.2",
     "@tailwindcss/postcss": "^4.0.13",

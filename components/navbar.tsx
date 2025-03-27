@@ -9,10 +9,13 @@ import {
 import { useCartStore } from "@/store/cart-store";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
+import { UserButton, SignInButton, useUser } from "@clerk/nextjs";
+
 export const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
   const { items } = useCartStore();
   const cartCount = items.reduce((acc, item) => acc + item.quantity, 0);
+  const { isSignedIn } = useUser();
 
   useEffect(() => {
     const handleResize = () => {
@@ -20,9 +23,7 @@ export const Navbar = () => {
         setMobileOpen(false);
       }
     };
-
     window.addEventListener("resize", handleResize);
-
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -50,6 +51,13 @@ export const Navbar = () => {
               </span>
             )}
           </Link>
+          {isSignedIn ? (
+            <UserButton afterSignOutUrl="/" />
+          ) : (
+            <SignInButton mode="modal">
+              <Button variant="outline">Login</Button>
+            </SignInButton>
+          )}
           <Button
             variant="ghost"
             className="md:hidden"
