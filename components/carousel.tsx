@@ -1,10 +1,8 @@
 "use client";
 
 import Stripe from "stripe";
-import { Card, CardContent, CardTitle } from "./ui/card";
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import { formatNumber } from "@/lib/common";
+import { ProductCard } from "./product-card";
 
 interface Props {
   products: Stripe.Product[];
@@ -33,36 +31,12 @@ export const Carousel = ({ products }: Props) => {
   const visibleProducts = getVisibleProducts();
 
   return (
-    <div className="flex gap-4">
-      {visibleProducts.map((product) => {
-        const price = product?.default_price as Stripe.Price;
+    <div className="flex flex-col md:flex-row gap-4">
+      {visibleProducts.map((product, index) => {
         return (
-          <Card
-            key={product.id}
-            className="relative overflow-hidden rounded-lg shadow-md border-gray-300 w-1/3"
-          >
-            {product?.images && product.images[0] && (
-              <div className="relative h-60 w-full">
-                <Image
-                  src={product?.images[0]}
-                  alt={product?.name}
-                  layout="fill"
-                  objectFit="cover"
-                  className="transition-opacity duration-500 ease-in-out"
-                />
-              </div>
-            )}
-            <CardContent className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50">
-              <CardTitle className="text-2xl font-bold text-black mb-2">
-                {product?.name}
-              </CardTitle>
-              {price && price.unit_amount && (
-                <p className="text-lg text-black">
-                  {formatNumber(price.unit_amount)} VNĐ
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          <div key={index} className="flex-1">
+            <ProductCard product={product} />
+          </div>
         );
       })}
     </div>
