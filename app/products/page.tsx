@@ -1,11 +1,11 @@
-import { AISupportAgent } from "@/components/ai-support-agent";
+import { AISupportAgent, ProductWithPrice } from "@/components/ai-support-agent";
 import { ProductList } from "@/components/product-list";
 import { stripe } from "@/lib/stripe";
 
 export default async function ProductsPage() {
-  const products = await stripe.products.list({
+  const products = (await stripe.products.list({
     expand: ["data.default_price"],
-  });
+  })).data as ProductWithPrice[];
 
   return (
     <>
@@ -13,9 +13,9 @@ export default async function ProductsPage() {
         <h1 className="text-3xl font-bold leading-none tracking-tight text-foreground text-center mb-8">
           All Products
         </h1>
-        <ProductList products={products.data} isDetail={false} />
+        <ProductList products={products} isDetail={false} />
       </div>
-      <AISupportAgent products={products.data} />
+      <AISupportAgent products={products} />
     </>
   );
 }
