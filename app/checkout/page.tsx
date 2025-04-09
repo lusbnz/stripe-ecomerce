@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCartStore } from "@/store/cart-store";
@@ -8,7 +9,16 @@ import { formatNumber } from "@/lib/common";
 
 export default function CheckoutPage() {
   const { items, removeItem, addItem } = useCartStore();
-  const total = items.reduce(
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
+    );
+  };
+
+  const selectedItems = items.filter((item) => selectedIds.includes(item.id));
+  const total = selectedItems.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0
   );
@@ -32,8 +42,15 @@ export default function CheckoutPage() {
           <ul className="space-y-4">
             {items.map((item) => (
               <li key={item.id} className="flex flex-col gap-2 border-b pb-2">
-                <div className="flex justify-between">
-                  <span className="font-medium">{item.name}</span>
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(item.id)}
+                      onChange={() => toggleSelect(item.id)}
+                    />
+                    <span className="font-medium">{item.name}</span>
+                  </label>
                   <span className="font-semibold">
                     {formatNumber(item.price * item.quantity)} VNĐ
                   </span>
@@ -58,15 +75,25 @@ export default function CheckoutPage() {
               </li>
             ))}
           </ul>
-          <div className="mt-4 border-t pt-2 text-lg font-semibold">
-            Total: {formatNumber(total)} VND
+          <div className="mt-4 pt-2 text-lg font-semibold">
+            Selected Total: {formatNumber(total)} VND
           </div>
         </CardContent>
       </Card>
+
       <form action={checkoutAction} className="max-w-md mx-auto">
-        <input type="hidden" name="items" value={JSON.stringify(items)} />
-        <Button type="submit" variant="default" className="w-full">
-          Proceed to Payment
+        <input
+          type="hidden"
+          name="items"
+          value={JSON.stringify(selectedItems)}
+        />
+        <Button
+          type="submit"
+          variant="default"
+          className="w-full"
+          disabled={selectedItems.length === 0}
+        >
+          {selectedItems.length === 0 ? "Select items to pay" : "Proceed to Payment"}
         </Button>
       </form>
     </div>
