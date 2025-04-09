@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "Buy cool products",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
