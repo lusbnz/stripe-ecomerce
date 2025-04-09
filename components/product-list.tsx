@@ -76,7 +76,7 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
           </div>
 
           <Select onValueChange={setSelectedColor} defaultValue="All">
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-full sm:w-[160px]">
               <SelectValue placeholder="Filter by color" />
             </SelectTrigger>
             <SelectContent>
@@ -89,7 +89,7 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
           </Select>
 
           <Select onValueChange={setSelectedCategory} defaultValue="All">
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-full sm:w-[160px]">
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
