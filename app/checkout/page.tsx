@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCartStore } from "@/store/cart-store";
 import { checkoutAction } from "./checkout-action";
 import { formatNumber } from "@/lib/common";
+import Image from "next/image";
 
 export default function CheckoutPage() {
   const { items, removeItem, addItem } = useCartStore();
@@ -34,7 +35,7 @@ export default function CheckoutPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8 text-center">Checkout</h1>
-      <Card className="max-w-md mx-auto mb-8">
+      <Card className="max-w-lg mx-auto mb-8">
         <CardHeader>
           <CardTitle className="text-xl font-bold">Order Summary</CardTitle>
         </CardHeader>
@@ -42,20 +43,34 @@ export default function CheckoutPage() {
           <ul className="space-y-4">
             {items.map((item) => (
               <li key={item.id} className="flex flex-col gap-2 border-b pb-2">
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex gap-3 items-start">
                     <input
                       type="checkbox"
                       checked={selectedIds.includes(item.id)}
                       onChange={() => toggleSelect(item.id)}
+                      className="mt-1"
                     />
-                    <span className="font-medium">{item.name}</span>
-                  </label>
+                    <Image
+                      src={item.imageUrl as string}
+                      alt={item.name}
+                      width={64}
+                      height={64}
+                      className="object-cover rounded-md"
+                    />
+                    <div>
+                      <div className="font-medium">{item.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {formatNumber(item.price)} VNĐ x {item.quantity}
+                      </div>
+                    </div>
+                  </div>
                   <span className="font-semibold">
                     {formatNumber(item.price * item.quantity)} VNĐ
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+
+                <div className="flex items-center gap-2 mt-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -93,7 +108,9 @@ export default function CheckoutPage() {
           className="w-full"
           disabled={selectedItems.length === 0}
         >
-          {selectedItems.length === 0 ? "Select items to pay" : "Proceed to Payment"}
+          {selectedItems.length === 0
+            ? "Select items to pay"
+            : "Proceed to Payment"}
         </Button>
       </form>
     </div>
