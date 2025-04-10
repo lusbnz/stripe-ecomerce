@@ -13,6 +13,7 @@ interface CartStore {
   items: CartItem[];
   addItem: (item: CartItem) => void;
   removeItem: (id: string) => void;
+  removeItemById: (id: string) => void;
   clearCart: () => void;
 }
 
@@ -47,6 +48,14 @@ export const useCartStore = create<CartStore>()(
               .filter((item) => item.quantity > 0),
           };
         }),
+
+        removeItemById: (id) =>
+        set((state) => {
+          return {
+            items: state.items.filter((item) => item.id !== id),
+          };
+        }),
+        
       clearCart: () =>
         set(() => {
           return { items: [] };

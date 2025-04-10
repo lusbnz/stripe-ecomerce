@@ -9,7 +9,7 @@ import { formatNumber } from "@/lib/common";
 import Image from "next/image";
 
 export default function CheckoutPage() {
-  const { items, removeItem, addItem } = useCartStore();
+  const { items, removeItem, addItem, removeItemById } = useCartStore();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const toggleSelect = (id: string) => {
@@ -65,9 +65,19 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                   </div>
-                  <span className="font-semibold">
-                    {formatNumber(item.price * item.quantity)} VNĐ
-                  </span>
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="font-semibold">
+                      {formatNumber(item.price * item.quantity)} VNĐ
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeItemById(item.id)}
+                      className="text-red-500 hover:text-red-600"
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2 mt-2">
