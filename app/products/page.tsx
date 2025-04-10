@@ -28,7 +28,7 @@ export default function ProductsPage() {
         <h1 className="text-3xl font-bold leading-none tracking-tight text-foreground text-center mb-8">
           All Products
         </h1>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="p-4 border rounded-lg shadow">
               <Skeleton className="h-48 w-full mb-4" />
