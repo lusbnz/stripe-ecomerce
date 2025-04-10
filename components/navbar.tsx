@@ -30,15 +30,15 @@ export const Navbar = () => {
   return (
     <nav className="sticky top-0 z-50 bg-white shadow">
       <div className="container mx-auto flex items-center justify-between px-4 py-4">
-        <Link href="/" className="hover:text-blue-600 font-bold">
+        <Link href="/" className="hover:text-blue-600 font-bold cursor-pointer">
           Ecommerce
         </Link>
-        <div className="hidden md:flex space-x-6">
+        <div className="hidden md:flex space-x-6 cursor-pointer">
           <Link href="/">Home</Link>
-          <Link href="/products" className="hover:text-blue-600">
+          <Link href="/products" className="hover:text-blue-600 cursor-pointer">
             Products
           </Link>
-          <Link href="/checkout" className="hover:text-blue-600">
+          <Link href="/checkout" className="hover:text-blue-600 cursor-pointer">
             Checkout
           </Link>
         </div>
@@ -55,12 +55,12 @@ export const Navbar = () => {
             <UserButton afterSignOutUrl="/" />
           ) : (
             <SignInButton mode="modal">
-              <Button variant="outline">Login</Button>
+              <Button variant="outline" className="cursor-pointer">Login</Button>
             </SignInButton>
           )}
           <Button
             variant="ghost"
-            className="md:hidden"
+            className="md:hidden cursor-pointer"
             onClick={() => setMobileOpen((prev) => !prev)}
           >
             {mobileOpen ? (
@@ -75,17 +75,17 @@ export const Navbar = () => {
         <nav className="md:hidden bg-white shadow-md">
           <ul className="flex flex-col p-4 space-y-2">
             <li>
-              <Link href="/" className="block hover:text-blue-600">
+              <Link href="/" className="block hover:text-blue-600 cursor-pointer">
                 Home
               </Link>
             </li>
             <li>
-              <Link href="/products" className="block hover:text-blue-600">
+              <Link href="/products" className="block hover:text-blue-600 cursor-pointer">
                 Products
               </Link>
             </li>
             <li>
-              <Link href="/checkout" className="block hover:text-blue-600">
+              <Link href="/checkout" className="block hover:text-blue-600 cursor-pointer">
                 Checkout
               </Link>
             </li>

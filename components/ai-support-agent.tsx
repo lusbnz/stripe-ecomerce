@@ -129,7 +129,7 @@ export function AISupportAgent({ products }: Props) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="fixed bottom-6 right-6 z-50 rounded-full p-4 shadow-lg">
+        <Button className="fixed bottom-6 right-6 z-50 rounded-full p-4 shadow-lg cursor-pointer">
           <Bot className="w-5 h-5" />
         </Button>
       </DialogTrigger>
@@ -172,8 +172,8 @@ export function AISupportAgent({ products }: Props) {
               placeholder="Tìm sản phẩm theo màu hoặc loại (vd: Black, Key Caps)..."
               className="resize-none mb-2"
             />
-            <Button onClick={handleSend} className="w-full">
-              Gửi
+            <Button onClick={handleSend} className="w-full cursor-pointer">
+              Send
             </Button>
           </div>
         </div>
