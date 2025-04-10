@@ -5,24 +5,28 @@ import Image from "next/image";
 import { Button } from "./ui/button";
 import { useCartStore } from "@/store/cart-store";
 import { formatNumber } from "@/lib/common";
+import { useState } from "react";
+
 interface Props {
   product: Stripe.Product;
 }
 
 export const ProductDetail = ({ product }: Props) => {
-  const { items, addItem, removeItem } = useCartStore();
+  const { addItem } = useCartStore();
   const price = product.default_price as Stripe.Price;
-  const cartItem = items.find((item) => item.id === product.id);
-  const quantity = cartItem ? cartItem.quantity : 0;
+  const [localQuantity, setLocalQuantity] = useState(1); // mặc định là 1
 
-  const onAddItem = () => {
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: price.unit_amount as number,
-      imageUrl: product.images ? product.images[0] : null,
-      quantity: 1,
-    });
+  const handleAddToCart = () => {
+    if (localQuantity > 0) {
+      addItem({
+        id: product.id,
+        name: product.name,
+        price: price.unit_amount as number,
+        imageUrl: product.images ? product.images[0] : null,
+        quantity: localQuantity,
+      });
+      setLocalQuantity(1); // reset sau khi thêm (tuỳ bạn)
+    }
   };
 
   return (
@@ -49,12 +53,20 @@ export const ProductDetail = ({ product }: Props) => {
           </p>
         )}
         <div className="flex items-center space-x-4 mt-4">
-          <Button variant="outline" onClick={() => removeItem(product.id)}>
+          <Button
+            variant="outline"
+            onClick={() => setLocalQuantity((prev) => Math.max(1, prev - 1))}
+          >
             –
           </Button>
-          <span className="text-lg font-semibold">{quantity}</span>
-          <Button onClick={onAddItem}>+</Button>
+          <span className="text-lg font-semibold">{localQuantity}</span>
+          <Button onClick={() => setLocalQuantity((prev) => prev + 1)}>
+            +
+          </Button>
         </div>
+        <Button className="mt-4" onClick={handleAddToCart}>
+          Add to Cart
+        </Button>
       </div>
     </div>
   );
