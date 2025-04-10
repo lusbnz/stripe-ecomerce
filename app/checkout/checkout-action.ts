@@ -3,8 +3,16 @@
 import { stripe } from "@/lib/stripe";
 import { CartItem } from "@/store/cart-store";
 import { redirect } from "next/navigation";
+import { currentUser } from "@clerk/nextjs/server"; 
 
 export const checkoutAction = async (formData: FormData): Promise<void> => {
+  const user = await currentUser();
+
+  if (!user) {
+    redirect("/sign-in");
+    return;
+  }
+
   const itemsJson = formData.get("items") as string;
   const items = JSON.parse(itemsJson);
   const line_items = items.map((item: CartItem) => ({
@@ -16,7 +24,7 @@ export const checkoutAction = async (formData: FormData): Promise<void> => {
     quantity: item.quantity,
   }));
 
-  const session = await stripe.checkout.sessions.create({
+  const stripeSession = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     line_items,
     mode: "payment",
@@ -27,5 +35,5 @@ export const checkoutAction = async (formData: FormData): Promise<void> => {
     cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout`,
   });
 
-  redirect(session.url!);
+  redirect(stripeSession.url!);
 };
