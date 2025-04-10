@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Slider } from "./ui/slider";
 
 interface Props {
   products: Stripe.Product[];
@@ -25,6 +26,7 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>("All");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 3000000]);
 
   const getColorFromMetadata = (product: Stripe.Product): string => {
     return product.metadata?.Color || product.metadata?.color || "";
@@ -49,10 +51,14 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
     const categoryMatch =
       selectedCategory === "All" || category === selectedCategory.toLowerCase();
 
+    const price = (product.default_price as Stripe.Price)?.unit_amount || 0;
+    const priceMatch = price >= priceRange[0] && price <= priceRange[1];
+
     return (
       (nameMatch || descriptionMatch || color.includes(term)) &&
       colorMatch &&
-      categoryMatch
+      categoryMatch &&
+      priceMatch
     );
   });
 
@@ -102,6 +108,30 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
           </Select>
         </div>
       )}
+
+      {/* <div className="flex w-full justify-center">
+        <div className="flex flex-col gap-3 w-full sm:w-[800px] bg-muted/50 p-4 rounded-xl shadow-sm border mb-6">
+          <Label className="text-sm font-medium text-muted-foreground mb-1">
+            Filter by Price (VNĐ)
+          </Label>
+
+          <Slider
+            min={0}
+            max={5000000}
+            step={50000}
+            value={priceRange}
+            onValueChange={(newRange) =>
+              setPriceRange(newRange as [number, number])
+            }
+            className="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
+          />
+
+          <div className="flex justify-between text-sm font-semibold text-gray-700">
+            <span>{priceRange[0].toLocaleString()}₫</span>
+            <span>{priceRange[1].toLocaleString()}₫</span>
+          </div>
+        </div>
+      </div> */}
 
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filteredProduct.map((product) => (
