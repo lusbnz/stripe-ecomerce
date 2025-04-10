@@ -49,7 +49,7 @@ export default function CheckoutPage() {
                       type="checkbox"
                       checked={selectedIds.includes(item.id)}
                       onChange={() => toggleSelect(item.id)}
-                      className="mt-1"
+                      className="mt-1 cursor-pointer"
                     />
                     <Image
                       src={item.imageUrl as string}
@@ -73,7 +73,7 @@ export default function CheckoutPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => removeItemById(item.id)}
-                      className="text-red-500 hover:text-red-600"
+                      className="text-red-500 hover:text-red-600 cursor-pointer"
                     >
                       Delete
                     </Button>
@@ -84,6 +84,7 @@ export default function CheckoutPage() {
                   <Button
                     variant="outline"
                     size="sm"
+                    className="cursor-pointer"
                     onClick={() => removeItem(item.id)}
                   >
                     –
@@ -92,6 +93,7 @@ export default function CheckoutPage() {
                   <Button
                     variant="outline"
                     size="sm"
+                    className="cursor-pointer"
                     onClick={() => addItem({ ...item, quantity: 1 })}
                   >
                     +
@@ -115,7 +117,7 @@ export default function CheckoutPage() {
         <Button
           type="submit"
           variant="default"
-          className="w-full"
+          className="w-full cursor-pointer"
           disabled={selectedItems.length === 0}
         >
           {selectedItems.length === 0

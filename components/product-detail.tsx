@@ -14,7 +14,7 @@ interface Props {
 export const ProductDetail = ({ product }: Props) => {
   const { addItem } = useCartStore();
   const price = product.default_price as Stripe.Price;
-  const [localQuantity, setLocalQuantity] = useState(1); // mặc định là 1
+  const [localQuantity, setLocalQuantity] = useState(1);
 
   const handleAddToCart = () => {
     if (localQuantity > 0) {
@@ -25,7 +25,7 @@ export const ProductDetail = ({ product }: Props) => {
         imageUrl: product.images ? product.images[0] : null,
         quantity: localQuantity,
       });
-      setLocalQuantity(1); // reset sau khi thêm (tuỳ bạn)
+      setLocalQuantity(1);
     }
   };
 
@@ -55,16 +55,20 @@ export const ProductDetail = ({ product }: Props) => {
         <div className="flex items-center space-x-4 mt-4">
           <Button
             variant="outline"
+            className="cursor-pointer"
             onClick={() => setLocalQuantity((prev) => Math.max(1, prev - 1))}
           >
             –
           </Button>
           <span className="text-lg font-semibold">{localQuantity}</span>
-          <Button onClick={() => setLocalQuantity((prev) => prev + 1)}>
+          <Button
+            className="cursor-pointer"
+            onClick={() => setLocalQuantity((prev) => prev + 1)}
+          >
             +
           </Button>
         </div>
-        <Button className="mt-4" onClick={handleAddToCart}>
+        <Button className="mt-4 cursor-pointer" onClick={handleAddToCart}>
           Add to Cart
         </Button>
       </div>
