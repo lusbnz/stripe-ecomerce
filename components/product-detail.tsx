@@ -6,6 +6,7 @@ import { Button } from "./ui/button";
 import { useCartStore } from "@/store/cart-store";
 import { formatNumber } from "@/lib/common";
 import { useState } from "react";
+import { Badge } from "./ui/badge";
 
 interface Props {
   product: Stripe.Product;
@@ -44,6 +45,20 @@ export const ProductDetail = ({ product }: Props) => {
       )}
       <div className="md:w-1/2">
         <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
+
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          {product.metadata?.Color && (
+            <Badge className="cursor-pointer p-2 text-[15px]" variant="outline">
+              Color: {product.metadata.Color}
+            </Badge>
+          )}
+          {product.metadata?.Category && (
+            <Badge className="cursor-pointer p-2 text-[15px]" variant="secondary">
+              Category: {product.metadata.Category}
+            </Badge>
+          )}
+        </div>
+
         {product.description && (
           <p className="text-gray-700 mb-4">{product.description}</p>
         )}
