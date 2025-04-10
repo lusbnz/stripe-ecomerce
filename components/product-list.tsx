@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Slider } from "./ui/slider";
+// import { Slider } from "./ui/slider";
 
 interface Props {
   products: Stripe.Product[];
@@ -26,7 +26,7 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>("All");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 3000000]);
+  // const [priceRange, setPriceRange] = useState<[number, number]>([0, 3000000]);
 
   const getColorFromMetadata = (product: Stripe.Product): string => {
     return product.metadata?.Color || product.metadata?.color || "";
@@ -51,14 +51,15 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
     const categoryMatch =
       selectedCategory === "All" || category === selectedCategory.toLowerCase();
 
-    const price = (product.default_price as Stripe.Price)?.unit_amount || 0;
-    const priceMatch = price >= priceRange[0] && price <= priceRange[1];
+    // const price = (product.default_price as Stripe.Price)?.unit_amount || 0;
+    // const priceMatch = price >= priceRange[0] && price <= priceRange[1];
 
     return (
       (nameMatch || descriptionMatch || color.includes(term)) &&
       colorMatch &&
-      categoryMatch &&
-      priceMatch
+      categoryMatch 
+      // &&
+      // priceMatch
     );
   });
 

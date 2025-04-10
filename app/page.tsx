@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { stripe } from "@/lib/stripe";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+// import { Button } from "@/components/ui/button";
+// import Link from "next/link";
 import { Carousel } from "@/components/carousel";
 
 export default async function Home() {
