@@ -36,7 +36,7 @@ export default async function Home() {
           </div> */}
           <Image
             alt="Hero Image"
-            src={"https://www.lofree.co/cdn/shop/files/Banner-PC_1f1a8545-b21d-4fc0-bb18-bbe87a08cd16.png?v=1741175643&width=2000"}
+            src={"/banner.webp"}
             className="rounded"
             width={450}
             height={450}
