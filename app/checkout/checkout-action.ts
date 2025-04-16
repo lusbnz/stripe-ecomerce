@@ -33,6 +33,12 @@ export const checkoutAction = async (formData: FormData): Promise<void> => {
     },
     success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success`,
     cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout`,
+
+    metadata: {
+      userId: user.id,
+      items: JSON.stringify(items), // ✅ gửi giỏ hàng lên
+    },
+
   });
 
   redirect(stripeSession.url!);
