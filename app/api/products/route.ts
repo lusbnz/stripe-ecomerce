@@ -1,10 +1,19 @@
 import { stripe } from "@/lib/stripe";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const { searchParams } = req.nextUrl;
+  const limit = parseInt(searchParams.get("limit") || "6");
+  const starting_after = searchParams.get("starting_after") || undefined;
+
   const products = await stripe.products.list({
+    limit,
     expand: ["data.default_price"],
+    ...(starting_after ? { starting_after } : {}),
   });
 
-  return NextResponse.json(products.data);
+  return NextResponse.json({
+    data: products.data,
+    has_more: products.has_more,
+  });
 }
