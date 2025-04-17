@@ -15,10 +15,11 @@ interface Props {
 export const ProductDetail = ({ product }: Props) => {
   const { addItem } = useCartStore();
   const price = product.default_price as Stripe.Price;
+  const maxQuantity = parseInt(product.metadata?.Quantity || "1"); 
   const [localQuantity, setLocalQuantity] = useState(1);
 
   const handleAddToCart = () => {
-    if (localQuantity > 0) {
+    if (localQuantity > 0 && localQuantity <= maxQuantity) {
       addItem({
         id: product.id,
         name: product.name,
@@ -37,7 +38,7 @@ export const ProductDetail = ({ product }: Props) => {
           <Image
             src={product.images[0]}
             alt={product.name}
-           fill
+            fill
             loading="lazy"
             objectFit="cover"
             className="transition duration-300 hover:opacity-90"
@@ -54,7 +55,10 @@ export const ProductDetail = ({ product }: Props) => {
             </Badge>
           )}
           {product.metadata?.Category && (
-            <Badge className="cursor-pointer p-2 text-[15px]" variant="secondary">
+            <Badge
+              className="cursor-pointer p-2 text-[15px]"
+              variant="secondary"
+            >
               Category: {product.metadata.Category}
             </Badge>
           )}
@@ -68,24 +72,37 @@ export const ProductDetail = ({ product }: Props) => {
             {formatNumber(price.unit_amount)} VNĐ
           </p>
         )}
+
+        <p className="text-sm text-gray-500 mt-2">
+          Có sẵn: {maxQuantity} sản phẩm
+        </p>
+
         <div className="flex items-center space-x-4 mt-4">
           <Button
             variant="outline"
-            className="cursor-pointer"
             onClick={() => setLocalQuantity((prev) => Math.max(1, prev - 1))}
           >
             –
           </Button>
           <span className="text-lg font-semibold">{localQuantity}</span>
           <Button
-            className="cursor-pointer"
-            onClick={() => setLocalQuantity((prev) => prev + 1)}
+            variant="outline"
+            onClick={() =>
+              setLocalQuantity((prev) => (prev < maxQuantity ? prev + 1 : prev))
+            }
           >
             +
           </Button>
         </div>
-        <Button className="mt-4 cursor-pointer" onClick={handleAddToCart}>
-          Add to Cart
+
+        <Button
+          className="mt-4"
+          disabled={localQuantity > maxQuantity}
+          onClick={handleAddToCart}
+        >
+          {localQuantity > maxQuantity
+            ? `Không thể mua quá ${maxQuantity}`
+            : "Add to Cart"}
         </Button>
       </div>
     </div>

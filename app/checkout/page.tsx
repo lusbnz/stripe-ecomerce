@@ -8,6 +8,8 @@ import { useCartStore } from "@/store/cart-store";
 import { checkoutAction } from "./checkout-action";
 import { formatNumber } from "@/lib/common";
 import Image from "next/image";
+import Link from "next/link";
+import { ShoppingCart } from "lucide-react";
 
 function CheckoutPageContent() {
   const { items, removeItem, addItem, removeItemById } = useCartStore();
@@ -38,8 +40,21 @@ function CheckoutPageContent() {
 
   if (items.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <h1 className="text-3xl font-bold mb-4">Your Cart is Empty</h1>
+      <div className="container mx-auto px-4 py-20 flex justify-center items-center min-h-[60vh]">
+        <Card className="w-full max-w-md lg:max-w-xl text-center py-10 px-6">
+          <CardContent className="flex flex-col items-center space-y-4">
+            <ShoppingCart className="h-10 w-10 text-muted-foreground" />
+            <h2 className="text-2xl font-semibold">Your cart is empty</h2>
+            <p className="text-sm text-muted-foreground">
+              Looks like you haven’t added anything to your cart yet.
+            </p>
+            <Link href="/products" passHref>
+              <Button variant="default" className="mt-4">
+                Continue Shopping
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -48,8 +63,10 @@ function CheckoutPageContent() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8 text-center">Checkout</h1>
       <Card className="max-w-md lg:max-w-xl mx-auto mb-8">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold">Order Summary</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xl font-bold text-primary">
+            Order Summary
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <ul className="space-y-4">
@@ -115,8 +132,9 @@ function CheckoutPageContent() {
               </li>
             ))}
           </ul>
-          <div className="mt-4 pt-2 text-lg font-semibold">
-            Selected Total: {formatNumber(total)} VND
+          <div className="mt-6 text-right text-lg font-bold">
+            Selected Total:{" "}
+            <span className="text-primary">{formatNumber(total)} VND</span>
           </div>
         </CardContent>
       </Card>

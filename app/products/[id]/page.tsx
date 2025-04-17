@@ -33,7 +33,7 @@ export default async function ProductPage({
   const plainSimilar = JSON.parse(JSON.stringify(similarProducts));
 
   return (
-    <div className="space-y-12 px-4">
+    <div className="space-y-12 px-4 min-h-[70vh]">
       <ProductDetail product={plainProduct} />
 
       {plainSimilar.length > 0 && (

@@ -41,9 +41,6 @@ export const ProductCard = ({ product, index }: Props) => {
           )}
           <div className="flex gap-2">
             <Button className="mt-4 bg-black text-white flex-1">View Details</Button>
-            {/* <Button className="mt-4 bg-black text-white flex-1">
-              Add to Cart
-            </Button> */}
           </div>
         </CardContent>
       </Card>
