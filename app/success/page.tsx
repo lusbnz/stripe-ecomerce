@@ -2,10 +2,10 @@
 
 import { useCartStore } from "@/store/cart-store";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function SuccessPage() {
+function SuccessPageContent() {
   const { removeItemById } = useCartStore();
   const searchParams = useSearchParams();
 
@@ -27,5 +27,13 @@ export default function SuccessPage() {
         Continue Shopping
       </Link>
     </div>
+  );
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SuccessPageContent />
+    </Suspense>
   );
 }
