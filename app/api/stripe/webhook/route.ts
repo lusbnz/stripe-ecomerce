@@ -4,7 +4,6 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import nodemailer from "nodemailer";
 
-// Stripe webhook secret từ .env
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(request: Request) {
@@ -21,7 +20,8 @@ export async function POST(request: Request) {
     return new NextResponse("Invalid signature", { status: 400 });
   }
 
-  // Xử lý event khi thanh toán hoàn tất
+  console.log('event', event);
+
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
 
@@ -42,13 +42,12 @@ export async function POST(request: Request) {
   return new NextResponse("Webhook received", { status: 200 });
 }
 
-// ✅ Hàm gửi email bằng Nodemailer
 async function sendMail(to: string, subject: string, text: string) {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: process.env.EMAIL_USER,   // Gmail của bạn
-      pass: process.env.EMAIL_PASS,   // Mật khẩu ứng dụng (App Password)
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
     },
   });
 

@@ -36,7 +36,7 @@ export const checkoutAction = async (formData: FormData): Promise<void> => {
 
     metadata: {
       userId: user.id,
-      items: JSON.stringify(items), // ✅ gửi giỏ hàng lên
+      items: JSON.stringify(items),
     },
 
   });
