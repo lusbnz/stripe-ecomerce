@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Button } from "./ui/button";
 import { useCartStore } from "@/store/cart-store";
 import { formatNumber } from "@/lib/common";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "./ui/badge";
 
 interface Props {
@@ -13,13 +13,24 @@ interface Props {
 }
 
 export const ProductDetail = ({ product }: Props) => {
-  const { addItem } = useCartStore();
+  const { addItem, items } = useCartStore();
   const price = product.default_price as Stripe.Price;
-  const maxQuantity = parseInt(product.metadata?.Quantity || "1"); 
+  const maxQuantity = parseInt(product.metadata?.Quantity || "1");
   const [localQuantity, setLocalQuantity] = useState(1);
+  const [remainingQuantity, setRemainingQuantity] = useState(maxQuantity);
+
+  const calculateRemainingQuantity = () => {
+    const itemInCart = items.find((item) => item.id === product.id);
+    const quantityInCart = itemInCart ? itemInCart.quantity : 0;
+    setRemainingQuantity(maxQuantity - quantityInCart);
+  };
+
+  useEffect(() => {
+    calculateRemainingQuantity();
+  }, [items, maxQuantity]);
 
   const handleAddToCart = () => {
-    if (localQuantity > 0 && localQuantity <= maxQuantity) {
+    if (localQuantity > 0 && localQuantity <= remainingQuantity) {
       addItem({
         id: product.id,
         name: product.name,
@@ -27,6 +38,8 @@ export const ProductDetail = ({ product }: Props) => {
         imageUrl: product.images ? product.images[0] : null,
         quantity: localQuantity,
       });
+
+      setRemainingQuantity((prev) => prev - localQuantity);
       setLocalQuantity(1);
     }
   };
@@ -74,7 +87,7 @@ export const ProductDetail = ({ product }: Props) => {
         )}
 
         <p className="text-sm text-gray-500 mt-2">
-          Có sẵn: {maxQuantity} sản phẩm
+          Có sẵn: {remainingQuantity} sản phẩm
         </p>
 
         <div className="flex items-center space-x-4 mt-4">
@@ -88,7 +101,9 @@ export const ProductDetail = ({ product }: Props) => {
           <Button
             variant="outline"
             onClick={() =>
-              setLocalQuantity((prev) => (prev < maxQuantity ? prev + 1 : prev))
+              setLocalQuantity((prev) =>
+                prev < remainingQuantity ? prev + 1 : prev
+              )
             }
           >
             +
@@ -97,11 +112,11 @@ export const ProductDetail = ({ product }: Props) => {
 
         <Button
           className="mt-4"
-          disabled={localQuantity > maxQuantity}
+          disabled={localQuantity > remainingQuantity}
           onClick={handleAddToCart}
         >
-          {localQuantity > maxQuantity
-            ? `Không thể mua quá ${maxQuantity}`
+          {localQuantity > remainingQuantity
+            ? `Không thể mua quá ${remainingQuantity}`
             : "Add to Cart"}
         </Button>
       </div>

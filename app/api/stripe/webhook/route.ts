@@ -37,6 +37,38 @@ export async function POST(request: Request) {
         `Bạn đã thanh toán ${amount.toLocaleString()} VND. Cảm ơn bạn rất nhiều!`
       );
     }
+
+    const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+
+    for (const item of lineItems.data) {
+      const productId = item?.price?.product ? item.price.product as string : null;
+
+      if (!productId) {
+        console.log("❌ Không có thông tin sản phẩm. Bỏ qua item.");
+        continue;
+      }
+
+      const quantityPurchased = item.quantity ?? 1;
+
+      // Lấy thông tin sản phẩm từ Stripe
+      const product = await stripe.products.retrieve(productId);
+
+      const currentQuantity = parseInt(product.metadata.Quantity || "0");
+
+      if (currentQuantity > 0) {
+        const updatedQuantity = currentQuantity - quantityPurchased;
+
+        await stripe.products.update(productId, {
+          metadata: {
+            Quantity: String(updatedQuantity),
+          },
+        });
+
+        console.log(`✅ Đã trừ ${quantityPurchased} sản phẩm khỏi kho, tồn kho còn: ${updatedQuantity}`);
+      } else {
+        console.log(`❌ Tồn kho không đủ cho sản phẩm ${productId}`);
+      }
+    }
   }
 
   return new NextResponse("Webhook received", { status: 200 });
