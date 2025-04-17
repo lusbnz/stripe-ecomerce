@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AISupportAgent, ProductWithPrice } from "@/components/ai-support-agent";
+import {
+  AISupportAgent,
+  ProductWithPrice,
+} from "@/components/ai-support-agent";
 import { ProductList } from "@/components/product-list";
 import { Skeleton } from "@/components/ui/skeleton";
+import Stripe from "stripe";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<ProductWithPrice[] | null>(null);
@@ -14,7 +18,13 @@ export default function ProductsPage() {
       fetch("/api/products")
         .then((res) => res.json())
         .then((data) => {
-          setProducts(data);
+          const filtered = data.filter(
+            (product: Stripe.Product & { default_price: Stripe.Price }) => {
+              const price = product.default_price as Stripe.Price;
+              return price && typeof price.unit_amount === "number";
+            }
+          );
+          setProducts(filtered);
           setIsLoading(false);
         });
     }, 500);
