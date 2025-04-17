@@ -57,7 +57,7 @@ export const Carousel = ({ products }: Props) => {
     <div className="flex flex-col md:flex-row gap-4">
       {visibleProducts.map((product, index) => (
         <div key={index} className="flex-1">
-          <ProductCard product={product} />
+          <ProductCard product={product} index={index}/>
         </div>
       ))}
     </div>

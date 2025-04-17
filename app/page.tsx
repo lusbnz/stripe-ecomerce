@@ -20,15 +20,18 @@ export default async function Home() {
         <div className="mx-auto grid grid-cols-1 items-center justify-items-center gap-8">
           <Image
             alt="Hero Image"
-            src={"/banner.webp"}
-            loading="lazy"
-            className="rounded"
+            src={
+              "https://www.lofree.co/cdn/shop/files/Banner-PC_1f1a8545-b21d-4fc0-bb18-bbe87a08cd16.png?v=1741175643&width=2000"
+            }
+            priority
+            className="rounded object-cover"
             width={450}
             height={450}
             style={{
               width: "100%",
               height: "100%",
             }}
+            unoptimized
           />
         </div>
       </section>

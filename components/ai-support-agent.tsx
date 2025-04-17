@@ -157,8 +157,8 @@ export function AISupportAgent({ products }: Props) {
 
             {matchedProducts.length > 0 && (
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {matchedProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                {matchedProducts.map((product, index) => (
+                  <ProductCard key={product.id} product={product} index={index} />
                 ))}
               </div>
             )}

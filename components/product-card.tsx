@@ -7,9 +7,10 @@ import { formatNumber } from "@/lib/common";
 
 interface Props {
   product: Stripe.Product;
+  index: number;
 }
 
-export const ProductCard = ({ product }: Props) => {
+export const ProductCard = ({ product, index }: Props) => {
   const price = product.default_price as Stripe.Price;
 
   return (
@@ -20,8 +21,8 @@ export const ProductCard = ({ product }: Props) => {
             <Image
               src={product.images[0]}
               alt={product.name}
-              loading="lazy"
-              layout="fill"
+              priority={index <= 3}
+             fill
               objectFit="cover"
               className="group-hover:opacity-90 transition-opacity duration-300 rounded-t-lg"
             />

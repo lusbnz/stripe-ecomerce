@@ -185,9 +185,9 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
       </div>
 
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredProduct.map((product) => (
+        {filteredProduct.map((product, index) => (
           <li key={product.id}>
-            <ProductCard product={product} />
+            <ProductCard product={product} index={index} />
           </li>
         ))}
       </ul>
