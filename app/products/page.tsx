@@ -30,7 +30,7 @@ export default function ProductsPage() {
 
     const filtered = newProducts.filter((product) => {
       const price = product.default_price as Stripe.Price;
-      return price && typeof price.unit_amount === "number";
+      return price && typeof price.unit_amount === "number" && price.unit_amount > 1;
     });
 
     setProducts((prev) => [...prev, ...filtered]);
