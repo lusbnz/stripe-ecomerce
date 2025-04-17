@@ -99,10 +99,15 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
                 setSearchTerm(e.target.value)
               }
               placeholder="Search by name, description, color or category..."
+              aria-label="Search products by name, description, color or category"
             />
           </div>
 
-          <Select onValueChange={setSelectedColor} value={selectedColor}>
+          <Select
+            onValueChange={setSelectedColor}
+            value={selectedColor}
+            aria-label="Filter by color"
+          >
             <SelectTrigger className="w-full sm:w-[160px]">
               <SelectValue placeholder="Filter by color" />
             </SelectTrigger>
@@ -115,7 +120,11 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
             </SelectContent>
           </Select>
 
-          <Select onValueChange={setSelectedCategory} value={selectedCategory}>
+          <Select
+            onValueChange={setSelectedCategory}
+            value={selectedCategory}
+            aria-label="Filter by category"
+          >
             <SelectTrigger className="w-full sm:w-[160px]">
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
@@ -132,6 +141,9 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
             variant="outline"
             onClick={() => setShowPriceFilter((prev) => !prev)}
             className="w-full sm:w-auto"
+            aria-label={
+              showPriceFilter ? "Hide price filter" : "Show price filter"
+            }
           >
             {showPriceFilter ? "Hide Price Filter" : "Show Price Filter"}
           </Button>
@@ -146,6 +158,7 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
                 variant="destructive"
                 onClick={handleClearFilters}
                 className="w-full sm:w-auto"
+                aria-label="Clear all filters"
               >
                 Clear Filters
               </Button>
