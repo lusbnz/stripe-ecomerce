@@ -1,0 +1,15 @@
+h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #212529;
+}
+
+ul {
+    list-style-type: disc; 
+    padding-left: 20px;
+}
+
+li {
+    font-size: 16px;
+    color: #333; 
+}
