@@ -77,9 +77,19 @@ export const ProductDetail = ({ product }: Props) => {
           )}
         </div>
 
-        {product.description && (
-          <p className="text-gray-700 mb-4">{product.description}</p>
+        {product.metadata?.Description ? (
+          <div
+            className="prose prose-sm sm:prose lg:prose-lg mb-4 text-gray-700"
+            dangerouslySetInnerHTML={{
+              __html: product.metadata.Description,
+            }}
+          />
+        ) : (
+          product.description && (
+            <p className="text-gray-700 mb-4">{product.description}</p>
+          )
         )}
+
         {price && price.unit_amount && (
           <p className="text-lg font-semibold text-gray-900">
             {formatNumber(price.unit_amount)} VNĐ
