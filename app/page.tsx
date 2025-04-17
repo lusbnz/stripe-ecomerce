@@ -21,6 +21,7 @@ export default async function Home() {
           <Image
             alt="Hero Image"
             src={"/banner.webp"}
+            loading="lazy"
             className="rounded"
             width={450}
             height={450}

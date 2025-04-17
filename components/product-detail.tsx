@@ -38,6 +38,7 @@ export const ProductDetail = ({ product }: Props) => {
             src={product.images[0]}
             alt={product.name}
             layout="fill"
+            loading="lazy"
             objectFit="cover"
             className="transition duration-300 hover:opacity-90"
           />

@@ -31,14 +31,12 @@ export const checkoutAction = async (formData: FormData): Promise<void> => {
     shipping_address_collection: {
       allowed_countries: ["VN", "US"], 
     },
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success`,
+    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/success?ids=${items.map((i: CartItem) => i.id).join(",")}`,
     cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout`,
-
     metadata: {
       userId: user.id,
       items: JSON.stringify(items),
     },
-
   });
 
   redirect(stripeSession.url!);

@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "./ui/slider";
-import { Button } from "@/components/ui/button"; // Thêm Button nếu cần
+import { Button } from "@/components/ui/button";
 
 interface Props {
   products: Stripe.Product[];
@@ -64,10 +64,29 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
     );
   });
 
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setSelectedColor("All");
+    setSelectedCategory("All");
+    setPriceRange([0, 3000000]);
+    setShowPriceFilter(false);
+  };
+
+  const isFiltered =
+    searchTerm !== "" ||
+    selectedColor !== "All" ||
+    selectedCategory !== "All" ||
+    priceRange[0] !== 0 ||
+    priceRange[1] !== 3000000;
+
   return (
     <div className="px-4">
       {!isDetail && (
-        <div className="mb-6 flex flex-col items-center gap-4 sm:flex-row sm:justify-center flex-wrap">
+        <div
+          className={`mb-6 flex flex-col items-center gap-4 mx-auto flex-row justify-center flex-wrap transition-all duration-500 ease-in-out ${
+            isFiltered ? "max-w-full" : "max-w-[1000px]"
+          }`}
+        >
           <div className="w-full max-w-md">
             <Label htmlFor="search" className="sr-only">
               Search products
@@ -83,7 +102,7 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
             />
           </div>
 
-          <Select onValueChange={setSelectedColor} defaultValue="All">
+          <Select onValueChange={setSelectedColor} value={selectedColor}>
             <SelectTrigger className="w-full sm:w-[160px]">
               <SelectValue placeholder="Filter by color" />
             </SelectTrigger>
@@ -96,7 +115,7 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
             </SelectContent>
           </Select>
 
-          <Select onValueChange={setSelectedCategory} defaultValue="All">
+          <Select onValueChange={setSelectedCategory} value={selectedCategory}>
             <SelectTrigger className="w-full sm:w-[160px]">
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
@@ -116,12 +135,30 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
           >
             {showPriceFilter ? "Hide Price Filter" : "Show Price Filter"}
           </Button>
+
+          <div
+            className={`transition-all duration-500 opacity-${
+              isFiltered ? "100" : "0"
+            } transform ${isFiltered ? "translate-y-0" : "-translate-y-4"}`}
+          >
+            {isFiltered && (
+              <Button
+                variant="destructive"
+                onClick={handleClearFilters}
+                className="w-full sm:w-auto"
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
       <div
         className={`flex w-full justify-center transition-all duration-500 ease-in-out ${
-          showPriceFilter ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"
+          showPriceFilter
+            ? "max-h-[500px] opacity-100"
+            : "max-h-0 opacity-0 overflow-hidden"
         }`}
       >
         <div className="flex flex-col gap-3 w-full sm:w-[800px] bg-muted/50 p-4 rounded-xl shadow-sm border mb-6">

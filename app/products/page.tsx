@@ -13,7 +13,7 @@ export default function ProductsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const loader = useRef(null);
-  const isFetchingRef = useRef(false); 
+  const isFetchingRef = useRef(false);
 
   const fetchInitialProducts = useCallback(async () => {
     setIsLoading(true);
@@ -23,11 +23,14 @@ export default function ProductsPage() {
     const res = await fetch(url.toString());
     const json = await res.json();
 
-    const newProducts: (Stripe.Product & { default_price: Stripe.Price })[] = json.data;
+    const newProducts: (Stripe.Product & { default_price: Stripe.Price })[] =
+      json.data;
 
     const filtered = newProducts.filter((product) => {
       const price = product.default_price as Stripe.Price;
-      return price && typeof price.unit_amount === "number" && price.unit_amount > 1;
+      return (
+        price && typeof price.unit_amount === "number" && price.unit_amount > 1
+      );
     });
 
     setProducts(filtered);
@@ -36,7 +39,8 @@ export default function ProductsPage() {
   }, []);
 
   const loadMoreProducts = useCallback(async () => {
-    if (isFetchingRef.current || !hasMore || isLoading || !products.length) return;
+    if (isFetchingRef.current || !hasMore || isLoading || !products.length)
+      return;
     isFetchingRef.current = true;
 
     setIsLoading(true);
@@ -47,11 +51,14 @@ export default function ProductsPage() {
 
     const res = await fetch(url.toString());
     const json = await res.json();
-    const newProducts: (Stripe.Product & { default_price: Stripe.Price })[] = json.data;
+    const newProducts: (Stripe.Product & { default_price: Stripe.Price })[] =
+      json.data;
 
     const filtered = newProducts.filter((product) => {
       const price = product.default_price as Stripe.Price;
-      return price && typeof price.unit_amount === "number" && price.unit_amount > 1;
+      return (
+        price && typeof price.unit_amount === "number" && price.unit_amount > 1
+      );
     });
 
     setProducts((prev) => [...prev, ...filtered]);
@@ -61,7 +68,7 @@ export default function ProductsPage() {
   }, [hasMore, isLoading, products]);
 
   useEffect(() => {
-    fetchInitialProducts(); // Fetch initial set of products
+    fetchInitialProducts();
   }, [fetchInitialProducts]);
 
   useEffect(() => {
@@ -87,9 +94,7 @@ export default function ProductsPage() {
   return (
     <>
       <div className="pb-8">
-        <h1 className="text-3xl font-bold text-center mb-8">
-          All Products
-        </h1>
+        <h1 className="text-3xl font-bold text-center mb-8">All Products</h1>
 
         <ProductList products={products} isDetail={false} />
 
@@ -106,7 +111,11 @@ export default function ProductsPage() {
         )}
 
         {hasMore && <div ref={loader} className="h-10 mt-10" />}
-        {!hasMore && <p className="text-center text-muted-foreground mt-4">No more products.</p>}
+        {!hasMore && (
+          <p className="text-center text-muted-foreground mt-4">
+            No more products.
+          </p>
+        )}
       </div>
     </>
   );

@@ -1,16 +1,29 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCartStore } from "@/store/cart-store";
 import { checkoutAction } from "./checkout-action";
 import { formatNumber } from "@/lib/common";
 import Image from "next/image";
+import { useEffect } from "react";
 
 export default function CheckoutPage() {
   const { items, removeItem, addItem, removeItemById } = useCartStore();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const ids = searchParams.get("ids");
+    if (ids) {
+      const idArray = ids.split(",");
+      idArray.forEach((id) => {
+        removeItemById(id);
+      });
+    }
+  }, [searchParams, removeItemById]);
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -54,6 +67,7 @@ export default function CheckoutPage() {
                     <Image
                       src={item.imageUrl as string}
                       alt={item.name}
+                      loading="lazy"
                       width={64}
                       height={64}
                       className="object-cover rounded-md"
