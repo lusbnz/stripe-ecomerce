@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,9 +8,8 @@ import { useCartStore } from "@/store/cart-store";
 import { checkoutAction } from "./checkout-action";
 import { formatNumber } from "@/lib/common";
 import Image from "next/image";
-import { useEffect } from "react";
 
-export default function CheckoutPage() {
+function CheckoutPageContent() {
   const { items, removeItem, addItem, removeItemById } = useCartStore();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const searchParams = useSearchParams();
@@ -140,5 +139,13 @@ export default function CheckoutPage() {
         </Button>
       </form>
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CheckoutPageContent />
+    </Suspense>
   );
 }
