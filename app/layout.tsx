@@ -4,6 +4,8 @@ import "./typo.css";
 import { Navbar } from "@/components/navbar";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Footer } from "@/components/footer";
+import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from "@vercel/analytics/react"
 
 export const metadata: Metadata = {
   title: "MyStore",
@@ -24,6 +26,8 @@ export default async function RootLayout({
             {children}
           </main>
           <Footer />
+          <SpeedInsights />
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>
