@@ -6,22 +6,19 @@ import { ProductList } from "@/components/product-list";
 import { Skeleton } from "@/components/ui/skeleton";
 import Stripe from "stripe";
 
-const LIMIT = 6;
+const LIMIT = 10;
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<ProductWithPrice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const loader = useRef(null);
+  const isFetchingRef = useRef(false); 
 
-  const loadProducts = useCallback(async () => {
+  const fetchInitialProducts = useCallback(async () => {
     setIsLoading(true);
-    const lastProductId = products.length ? products[products.length - 1].id : null;
     const url = new URL("/api/products", window.location.origin);
     url.searchParams.set("limit", String(LIMIT));
-    if (lastProductId) {
-      url.searchParams.set("starting_after", lastProductId);
-    }
 
     const res = await fetch(url.toString());
     const json = await res.json();
@@ -33,22 +30,47 @@ export default function ProductsPage() {
       return price && typeof price.unit_amount === "number" && price.unit_amount > 1;
     });
 
+    setProducts(filtered);
+    setHasMore(json.has_more);
+    setIsLoading(false);
+  }, []);
+
+  const loadMoreProducts = useCallback(async () => {
+    if (isFetchingRef.current || !hasMore || isLoading || !products.length) return;
+    isFetchingRef.current = true;
+
+    setIsLoading(true);
+    const lastProductId = products[products.length - 1].id;
+    const url = new URL("/api/products", window.location.origin);
+    url.searchParams.set("limit", String(LIMIT));
+    url.searchParams.set("starting_after", lastProductId);
+
+    const res = await fetch(url.toString());
+    const json = await res.json();
+    const newProducts: (Stripe.Product & { default_price: Stripe.Price })[] = json.data;
+
+    const filtered = newProducts.filter((product) => {
+      const price = product.default_price as Stripe.Price;
+      return price && typeof price.unit_amount === "number" && price.unit_amount > 1;
+    });
+
     setProducts((prev) => [...prev, ...filtered]);
     setHasMore(json.has_more);
     setIsLoading(false);
-  }, [products]);
+    isFetchingRef.current = false;
+  }, [hasMore, isLoading, products]);
 
   useEffect(() => {
-    loadProducts();
-  }, []);
+    fetchInitialProducts(); // Fetch initial set of products
+  }, [fetchInitialProducts]);
 
   useEffect(() => {
-    if (!hasMore || isLoading) return;
+    if (!hasMore || isLoading || products.length === 0) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          loadProducts();
+          loadMoreProducts();
         }
       },
       { threshold: 1 }
@@ -60,7 +82,7 @@ export default function ProductsPage() {
     return () => {
       if (currentLoader) observer.unobserve(currentLoader);
     };
-  }, [loadProducts, hasMore, isLoading]);
+  }, [loadMoreProducts, hasMore, isLoading, products.length]);
 
   return (
     <>

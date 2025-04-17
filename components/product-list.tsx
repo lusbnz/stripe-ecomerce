@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "./ui/slider";
+import { Button } from "@/components/ui/button"; // Thêm Button nếu cần
 
 interface Props {
   products: Stripe.Product[];
@@ -27,6 +28,7 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
   const [selectedColor, setSelectedColor] = useState<string>("All");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 3000000]);
+  const [showPriceFilter, setShowPriceFilter] = useState<boolean>(false);
 
   const getColorFromMetadata = (product: Stripe.Product): string => {
     return product.metadata?.Color || product.metadata?.color || "";
@@ -106,10 +108,22 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
               ))}
             </SelectContent>
           </Select>
+
+          <Button
+            variant="outline"
+            onClick={() => setShowPriceFilter((prev) => !prev)}
+            className="w-full sm:w-auto"
+          >
+            {showPriceFilter ? "Hide Price Filter" : "Show Price Filter"}
+          </Button>
         </div>
       )}
 
-      <div className="flex w-full justify-center">
+      <div
+        className={`flex w-full justify-center transition-all duration-500 ease-in-out ${
+          showPriceFilter ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"
+        }`}
+      >
         <div className="flex flex-col gap-3 w-full sm:w-[800px] bg-muted/50 p-4 rounded-xl shadow-sm border mb-6">
           <Label className="text-sm font-medium text-muted-foreground mb-1">
             Filter by Price (VNĐ)
