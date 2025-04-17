@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { ProductWithPrice } from "@/components/ai-support-agent";
+import {
+  AISupportAgent,
+  ProductWithPrice,
+} from "@/components/ai-support-agent";
 import { ProductList } from "@/components/product-list";
 import { Skeleton } from "@/components/ui/skeleton";
 import Stripe from "stripe";
@@ -117,6 +120,8 @@ export default function ProductsPage() {
           </p>
         )}
       </div>
+
+      <AISupportAgent products={products} />
     </>
   );
 }
