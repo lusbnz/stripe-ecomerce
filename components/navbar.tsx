@@ -41,6 +41,9 @@ export const Navbar = () => {
           <Link href="/checkout" className="hover:text-blue-600 cursor-pointer">
             Checkout
           </Link>
+          <Link href="/transactions" className="hover:text-blue-600 cursor-pointer">
+            Transactions
+          </Link>
         </div>
         <div className="flex items-center space-x-4">
           <Link href="/checkout" className="relative">
@@ -87,6 +90,11 @@ export const Navbar = () => {
             <li>
               <Link href="/checkout" className="block hover:text-blue-600 cursor-pointer">
                 Checkout
+              </Link>
+            </li>
+            <li>
+              <Link href="/transactions" className="block hover:text-blue-600 cursor-pointer">
+                Transactions
               </Link>
             </li>
           </ul>
