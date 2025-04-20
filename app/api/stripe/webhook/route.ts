@@ -1,30 +1,32 @@
-import Stripe from "stripe";
+import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
-import { NextResponse } from "next/server";
-import { headers } from "next/headers";
+import Stripe from "stripe";
 import nodemailer from "nodemailer";
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
-export async function POST(request: Request) {
-  const body = await request.text();
-  const allHeaders = await headers();
-  const signature = allHeaders.get("Stripe-Signature") as string;
+export async function POST(req: NextRequest) {
+  const rawBody = await req.text();
+  const signature = req.headers.get("stripe-signature") as string;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
   } catch (err) {
     console.error("❌ Invalid signature", err);
     return new NextResponse("Invalid signature", { status: 400 });
   }
 
-  console.log('event', event);
+  console.log("✅ Webhook event:", event.type);
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-
     const email = session.customer_details?.email;
     const amount = session.amount_total ? session.amount_total / 100 : 0;
 
@@ -41,7 +43,7 @@ export async function POST(request: Request) {
     const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
 
     for (const item of lineItems.data) {
-      const productId = item?.price?.product ? item.price.product as string : null;
+      const productId = item?.price?.product ? (item.price.product as string) : null;
 
       if (!productId) {
         console.log("❌ Không có thông tin sản phẩm. Bỏ qua item.");
@@ -49,10 +51,7 @@ export async function POST(request: Request) {
       }
 
       const quantityPurchased = item.quantity ?? 1;
-
-      // Lấy thông tin sản phẩm từ Stripe
       const product = await stripe.products.retrieve(productId);
-
       const currentQuantity = parseInt(product.metadata.Quantity || "0");
 
       if (currentQuantity > 0) {
@@ -64,7 +63,9 @@ export async function POST(request: Request) {
           },
         });
 
-        console.log(`✅ Đã trừ ${quantityPurchased} sản phẩm khỏi kho, tồn kho còn: ${updatedQuantity}`);
+        console.log(
+          `✅ Đã trừ ${quantityPurchased} sản phẩm khỏi kho, tồn kho còn: ${updatedQuantity}`
+        );
       } else {
         console.log(`❌ Tồn kho không đủ cho sản phẩm ${productId}`);
       }
