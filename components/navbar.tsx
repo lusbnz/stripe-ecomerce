@@ -9,13 +9,11 @@ import {
 import { useCartStore } from "@/store/cart-store";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { UserButton, SignInButton, useUser } from "@clerk/nextjs";
 
 export const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
   const { items } = useCartStore();
   const cartCount = items.reduce((acc, item) => acc + item.quantity, 0);
-  const { isSignedIn } = useUser();
 
   useEffect(() => {
     const handleResize = () => {
@@ -41,8 +39,11 @@ export const Navbar = () => {
           <Link href="/checkout" className="hover:text-blue-600 cursor-pointer">
             Checkout
           </Link>
-          <Link href="/transactions" className="hover:text-blue-600 cursor-pointer">
+          {/* <Link href="/transactions" className="hover:text-blue-600 cursor-pointer">
             Transactions
+          </Link> */}
+           <Link href="/dashboard" className="hover:text-blue-600 cursor-pointer">
+            Dashboard
           </Link>
         </div>
         <div className="flex items-center space-x-4">
@@ -54,13 +55,11 @@ export const Navbar = () => {
               </span>
             )}
           </Link>
-          {isSignedIn ? (
-            <UserButton afterSignOutUrl="/" />
-          ) : (
-            <SignInButton mode="modal">
-              <Button variant="outline" className="cursor-pointer">Login</Button>
-            </SignInButton>
-          )}
+          <Link href="/sign-in">
+            <Button variant="outline" className="cursor-pointer">
+              Login
+            </Button>
+          </Link>
           <Button
             variant="ghost"
             className="md:hidden cursor-pointer"
@@ -78,22 +77,34 @@ export const Navbar = () => {
         <nav className="md:hidden bg-white shadow-md">
           <ul className="flex flex-col p-4 space-y-2">
             <li>
-              <Link href="/" className="block hover:text-blue-600 cursor-pointer">
+              <Link
+                href="/"
+                className="block hover:text-blue-600 cursor-pointer"
+              >
                 Home
               </Link>
             </li>
             <li>
-              <Link href="/products" className="block hover:text-blue-600 cursor-pointer">
+              <Link
+                href="/products"
+                className="block hover:text-blue-600 cursor-pointer"
+              >
                 Products
               </Link>
             </li>
             <li>
-              <Link href="/checkout" className="block hover:text-blue-600 cursor-pointer">
+              <Link
+                href="/checkout"
+                className="block hover:text-blue-600 cursor-pointer"
+              >
                 Checkout
               </Link>
             </li>
             <li>
-              <Link href="/transactions" className="block hover:text-blue-600 cursor-pointer">
+              <Link
+                href="/transactions"
+                className="block hover:text-blue-600 cursor-pointer"
+              >
                 Transactions
               </Link>
             </li>
