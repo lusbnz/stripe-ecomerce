@@ -55,11 +55,11 @@ export const Navbar = () => {
               </span>
             )}
           </Link>
-          <Link href="/sign-in">
+          {/* <Link href="/sign-in">
             <Button variant="outline" className="cursor-pointer">
               Login
             </Button>
-          </Link>
+          </Link> */}
           <Button
             variant="ghost"
             className="md:hidden cursor-pointer"
@@ -100,14 +100,14 @@ export const Navbar = () => {
                 Checkout
               </Link>
             </li>
-            <li>
+            {/* <li>
               <Link
                 href="/transactions"
                 className="block hover:text-blue-600 cursor-pointer"
               >
                 Transactions
               </Link>
-            </li>
+            </li> */}
           </ul>
         </nav>
       )}
