@@ -47,7 +47,7 @@ function CheckoutPageContent() {
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev?.filter((itemId) => itemId !== id) : [...prev, id]
+      prev?.includes(id) ? prev?.filter((itemId) => itemId !== id) : [...prev, id]
     );
   };
 
@@ -73,7 +73,7 @@ function CheckoutPageContent() {
     setSelectedIds((prev) => prev.filter((itemId) => itemId !== id));
   };
 
-  const selectedItems = items?.filter((item) => selectedIds.includes(item.id));
+  const selectedItems = items?.filter((item) => selectedIds?.includes(item.id));
   const total = selectedItems?.reduce(
     (acc, item) => acc + item.pricing * item.quantity,
     0
@@ -182,7 +182,7 @@ function CheckoutPageContent() {
                   <div className="flex gap-3 items-start">
                     <input
                       type="checkbox"
-                      checked={selectedIds.includes(item.id)}
+                      checked={selectedIds?.includes(item.id)}
                       onChange={() => toggleSelect(item.id)}
                       className="mt-1 cursor-pointer"
                     />
