@@ -47,7 +47,9 @@ function CheckoutPageContent() {
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
-      prev?.includes(id) ? prev?.filter((itemId) => itemId !== id) : [...prev, id]
+      prev?.includes(id)
+        ? prev?.filter((itemId) => itemId !== id)
+        : [...prev, id]
     );
   };
 
@@ -92,23 +94,20 @@ function CheckoutPageContent() {
   };
 
   const handleCheckout = async () => {
-    const user = JSON.parse(localStorage.getItem("ecom_user") || "{}");;
+    const user = JSON.parse(localStorage.getItem("ecom_user") || "{}");
     if (!user.id) {
-      redirect('/sign-in')
+      redirect("/sign-in");
     }
     if (!isAddressValid) {
       alert("Vui lòng điền đầy đủ thông tin địa chỉ giao hàng");
       return;
     }
     setLoading(true);
-    const formData = new FormData();
-    formData.append("items", JSON.stringify(selectedItems));
-    const itemsString = formData.get("items")?.toString() || "[]";
-    const items = JSON.parse(itemsString);
-    const totalAmount = items.reduce(
-      (sum: number, item: Product) => sum + item.pricing * item.quantity,
+    const totalAmount = selectedItems.reduce(
+      (sum, item) => sum + item.pricing * item.quantity,
       0
     );
+
     const referenceCode = `ORD-${Date.now()}`;
     const payload = {
       amount: totalAmount,
@@ -119,7 +118,7 @@ function CheckoutPageContent() {
       region: address.region,
       city: address.city,
       products: selectedItems,
-      description: referenceCode
+      description: referenceCode,
     };
     fetch("/api/orders", {
       method: "POST",
@@ -142,6 +141,8 @@ function CheckoutPageContent() {
       })
       .finally(() => {
         setLoading(false);
+        updateLocalStorage([]);
+        setSelectedIds([]);
       });
   };
 
@@ -170,168 +171,176 @@ function CheckoutPageContent() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8 text-center">Checkout</h1>
       <div className="flex flex-wrap gap-[24px]">
-      <Card className="flex-1 mb-8">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl font-bold text-primary">
-            Order Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-4">
-            {items.map((item) => (
-              <li key={item.id} className="flex flex-col gap-2 border-b pb-2">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex gap-3 items-start">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds?.includes(item.id)}
-                      onChange={() => toggleSelect(item.id)}
-                      className="mt-1 cursor-pointer"
-                    />
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      loading="lazy"
-                      width={64}
-                      height={64}
-                      className="object-cover rounded-md"
-                    />
-                    <div>
-                      <div className="font-medium">{item.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {formatNumber(item.pricing)} VNĐ x {item.quantity}
+        <Card className="flex-1 mb-8">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl font-bold text-primary">
+              Order Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-4">
+              {items.map((item) => (
+                <li key={item.id} className="flex flex-col gap-2 border-b pb-2">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex gap-3 items-start">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds?.includes(item.id)}
+                        onChange={() => toggleSelect(item.id)}
+                        className="mt-1 cursor-pointer"
+                      />
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        loading="lazy"
+                        width={64}
+                        height={64}
+                        className="object-cover rounded-md"
+                      />
+                      <div>
+                        <div className="font-medium">{item.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {formatNumber(item.pricing)} VNĐ x {item.quantity}
+                        </div>
                       </div>
                     </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className="font-semibold">
+                        {formatNumber(item.pricing * item.quantity)} VNĐ
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeItemById(item.id)}
+                        className="text-red-500 hover:text-red-600 cursor-pointer"
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span className="font-semibold">
-                      {formatNumber(item.pricing * item.quantity)} VNĐ
+
+                  <div className="flex items-center gap-2 mt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="cursor-pointer"
+                      onClick={() => removeItem(item.id)}
+                    >
+                      –
+                    </Button>
+                    <span className="text-lg font-semibold">
+                      {item.quantity}
                     </span>
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      onClick={() => removeItemById(item.id)}
-                      className="text-red-500 hover:text-red-600 cursor-pointer"
+                      className="cursor-pointer"
+                      onClick={() => addItem({ ...item, quantity: 1 })}
                     >
-                      Delete
+                      +
                     </Button>
                   </div>
-                </div>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6 text-right text-lg font-bold">
+              Selected Total:{" "}
+              <span className="text-primary">{formatNumber(total)} VND</span>
+            </div>
+          </CardContent>
+        </Card>
 
-                <div className="flex items-center gap-2 mt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="cursor-pointer"
-                    onClick={() => removeItem(item.id)}
-                  >
-                    –
-                  </Button>
-                  <span className="text-lg font-semibold">{item.quantity}</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="cursor-pointer"
-                    onClick={() => addItem({ ...item, quantity: 1 })}
-                  >
-                    +
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-6 text-right text-lg font-bold">
-            Selected Total:{" "}
-            <span className="text-primary">{formatNumber(total)} VND</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="flex-1 mb-8">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold text-primary">
-            Delivery Address
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div>
-            <label
-              className="block text-sm font-medium mb-1"
-              htmlFor="full_address"
-            >
-              Full Adrress
-            </label>
-            <Input
-              id="full_address"
-              name="full_address"
-              type="text"
-              value={address.full_address}
-              onChange={handleInputChange}
-              placeholder="Enter full address"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1" htmlFor="street">
-              Street
-            </label>
-            <Input
-              id="street"
-              name="street"
-              type="text"
-              value={address.street}
-              onChange={handleInputChange}
-              placeholder="Enter street"
-              required
-            />
-          </div>
-          <div>
-            <label
-              className="block text-sm font-medium mb-1"
-              htmlFor="district"
-            >
-              District
-            </label>
-            <Input
-              id="district"
-              name="district"
-              type="text"
-              value={address.district}
-              onChange={handleInputChange}
-              placeholder="Enter district"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1" htmlFor="region">
-              Region
-            </label>
-            <Input
-              id="region"
-              name="region"
-              type="text"
-              value={address.region}
-              onChange={handleInputChange}
-              placeholder="Enter region"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1" htmlFor="city">
-              City
-            </label>
-            <Input
-              id="city"
-              name="city"
-              type="text"
-              value={address.city}
-              onChange={handleInputChange}
-              placeholder="Enter city"
-              required
-            />
-          </div>
-        </CardContent>
-      </Card>
+        <Card className="flex-1 mb-8">
+          <CardHeader>
+            <CardTitle className="text-xl font-bold text-primary">
+              Delivery Address
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <div>
+              <label
+                className="block text-sm font-medium mb-1"
+                htmlFor="full_address"
+              >
+                Full Adrress
+              </label>
+              <Input
+                id="full_address"
+                name="full_address"
+                type="text"
+                value={address.full_address}
+                onChange={handleInputChange}
+                placeholder="Enter full address"
+                required
+              />
+            </div>
+            <div>
+              <label
+                className="block text-sm font-medium mb-1"
+                htmlFor="street"
+              >
+                Street
+              </label>
+              <Input
+                id="street"
+                name="street"
+                type="text"
+                value={address.street}
+                onChange={handleInputChange}
+                placeholder="Enter street"
+                required
+              />
+            </div>
+            <div>
+              <label
+                className="block text-sm font-medium mb-1"
+                htmlFor="district"
+              >
+                District
+              </label>
+              <Input
+                id="district"
+                name="district"
+                type="text"
+                value={address.district}
+                onChange={handleInputChange}
+                placeholder="Enter district"
+                required
+              />
+            </div>
+            <div>
+              <label
+                className="block text-sm font-medium mb-1"
+                htmlFor="region"
+              >
+                Region
+              </label>
+              <Input
+                id="region"
+                name="region"
+                type="text"
+                value={address.region}
+                onChange={handleInputChange}
+                placeholder="Enter region"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1" htmlFor="city">
+                City
+              </label>
+              <Input
+                id="city"
+                name="city"
+                type="text"
+                value={address.city}
+                onChange={handleInputChange}
+                placeholder="Enter city"
+                required
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="max-w-md mx-auto">

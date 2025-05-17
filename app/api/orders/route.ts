@@ -58,6 +58,31 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    for (const item of products) {
+      const { data: product, error: fetchErr } = await supabase
+        .from('products')
+        .select('quantity')
+        .eq('id', item.productId)
+        .single();
+
+      if (fetchErr) {
+        return NextResponse.json({ error: fetchErr.message }, { status: 500 });
+      }
+
+      if (!product || product.quantity < item.quantity) {
+        return NextResponse.json({ error: 'Sản phẩm không đủ hàng' }, { status: 400 });
+      }
+
+      const { error: updateErr } = await supabase
+        .from('products')
+        .update({ quantity: product.quantity - item.quantity })
+        .eq('id', item.productId);
+
+      if (updateErr) {
+        return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      }
+    }
+
     // 1. Thêm địa chỉ
     const { data: addressData, error: addressError } = await supabase
       .from('addresses')
