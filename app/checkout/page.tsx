@@ -108,7 +108,7 @@ function CheckoutPageContent() {
       0
     );
 
-    const referenceCode = `ORD-${Date.now()}`;
+    const referenceCode = `ORD${Date.now()}`;
     const payload = {
       amount: totalAmount,
       customer_id: 1,
