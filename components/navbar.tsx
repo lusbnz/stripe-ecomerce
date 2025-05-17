@@ -107,6 +107,11 @@ export const Navbar = () => {
                 <DropdownMenuItem className="cursor-default select-none">
                   {user?.email}
                 </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-default select-none">
+                  <Link href="/profile" className="relative">
+                    Đổi mật khẩu
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={handleLogout}
                   className="text-red-600"
