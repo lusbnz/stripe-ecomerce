@@ -16,11 +16,19 @@ export async function POST(request: NextRequest) {
     console.log('[Webhook] gateway:', gateway);
     console.log('[Webhook] description:', description);
 
+    const orderCodeMatch = description.match(/ORD\d+/);
+    const orderCode = orderCodeMatch ? orderCodeMatch[0] : null;
+
+    if (!orderCode) {
+      console.error('[Webhook] Cannot extract order code from description');
+      return NextResponse.json({ error: 'Invalid description format' }, { status: 400 });
+    }
+
     // 1. Tìm đơn hàng
     const { data: orderData, error: findError } = await supabase
       .from('orders')
       .select('*')
-      .eq('description', referenceCode)
+      .eq('description', orderCode)
       .single();
 
     if (findError || !orderData) {
