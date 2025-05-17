@@ -167,7 +167,8 @@ function CheckoutPageContent() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8 text-center">Checkout</h1>
-      <Card className="max-w-md lg:max-w-xl mx-auto mb-8">
+      <div className="flex flex-wrap gap-[24px]">
+      <Card className="flex-1 mb-8">
         <CardHeader className="pb-2">
           <CardTitle className="text-xl font-bold text-primary">
             Order Summary
@@ -244,7 +245,7 @@ function CheckoutPageContent() {
         </CardContent>
       </Card>
 
-      <Card className="max-w-md lg:max-w-xl mx-auto mb-8">
+      <Card className="flex-1 mb-8">
         <CardHeader>
           <CardTitle className="text-xl font-bold text-primary">
             Delivery Address
@@ -329,6 +330,7 @@ function CheckoutPageContent() {
           </div>
         </CardContent>
       </Card>
+      </div>
 
       <div className="max-w-md mx-auto">
         <Button

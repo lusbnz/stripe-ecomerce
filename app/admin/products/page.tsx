@@ -351,7 +351,7 @@ export default function ProductsPage() {
 
   return (
     <div>
-      <div className="flex justify-between mb-4">
+      <div className="flex flex-wrap justify-between mb-4 gap-2">
         <div className="flex flex-wrap gap-2">
           <Input
             className="w-full sm:w-[200px]"

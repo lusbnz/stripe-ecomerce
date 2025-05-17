@@ -8,7 +8,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 export default function ProductPage() {
-  const { id } = useParams();       
+  const { id } = useParams();
 
   const [products, setProducts] = useState<Product>();
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -28,7 +28,7 @@ export default function ProductPage() {
         setIsLoading(false);
       });
   }, [id]);
-  
+
   useEffect(() => {
     if (!id) return;
     fetchFeatureProducts();
@@ -78,7 +78,10 @@ export default function ProductPage() {
               <h2 className="text-2xl font-bold text-center text-foreground mb-6">
                 Similar Products
               </h2>
-              <ProductList products={plainSimilar} isDetail={true} />
+              <ProductList
+                products={plainSimilar?.slice(0, 3)}
+                isDetail={true}
+              />
             </div>
           )}
         </>

@@ -25,6 +25,40 @@ interface User {
 export const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
+  // const [cartCount, setCartCount] = useState<number>(0);
+
+  // useEffect(() => {
+  //   const storedCart = localStorage.getItem("cart");
+  //   if (storedCart) {
+  //     try {
+  //       const cartArray = JSON.parse(storedCart);
+  //       if (Array.isArray(cartArray)) {
+  //         setCartCount(cartArray.length);
+  //       }
+  //     } catch {
+  //       setCartCount(0);
+  //     }
+  //   }
+
+  //   const handleStorageChange = (event: StorageEvent) => {
+  //     if (event.key === "cart" && event.newValue) {
+  //       try {
+  //         const cartArray = JSON.parse(event.newValue);
+  //         if (Array.isArray(cartArray)) {
+  //           setCartCount(cartArray.length);
+  //         }
+  //       } catch {
+  //         setCartCount(0);
+  //       }
+  //     }
+  //   };
+
+  //   window.addEventListener("storage", handleStorageChange);
+
+  //   return () => {
+  //     window.removeEventListener("storage", handleStorageChange);
+  //   };
+  // }, []);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("ecom_user");
@@ -80,7 +114,10 @@ export const Navbar = () => {
             Dashboard
           </Link> */}
           {user?.role === "ADMIN" && (
-            <Link href="/admin" className="hover:text-blue-600 cursor-pointer">
+            <Link
+              href="/admin/products"
+              className="hover:text-blue-600 cursor-pointer"
+            >
               Admin
             </Link>
           )}

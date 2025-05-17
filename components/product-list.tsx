@@ -20,8 +20,8 @@ interface Props {
   isDetail: boolean;
 }
 
-const COLORS = ["All", "Brown", "White", "Black", "Gray", "Blue"];
-const CATEGORIES = ["All", "Keyboard", "Key Caps", "Mouse", "Accessories"];
+const COLORS = ["All", "Brown", "White", "Black", "Gray", "Blue", "Silver"];
+const CATEGORIES = ["All", "Keycaps", "Mouse"];
 
 export const ProductList = ({ products, isDetail = false }: Props) => {
   const [searchTerm, setSearchTerm] = useState<string>("");
