@@ -39,7 +39,8 @@ export async function POST(req: NextRequest) {
     district,
     region,
     city,
-    products
+    products,
+    description
   } = await req.json();
 
   if (
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
         payment_method: 'VNPAY',
         address_id: addressData.id,
         status: 'PENDING',
+        description: description,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }])

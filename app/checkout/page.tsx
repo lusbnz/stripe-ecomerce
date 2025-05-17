@@ -109,6 +109,7 @@ function CheckoutPageContent() {
       (sum: number, item: Product) => sum + item.pricing * item.quantity,
       0
     );
+    const referenceCode = `ORD-${Date.now()}`;
     const payload = {
       amount: totalAmount,
       customer_id: 1,
@@ -117,7 +118,8 @@ function CheckoutPageContent() {
       district: address.district,
       region: address.region,
       city: address.city,
-      products: selectedItems
+      products: selectedItems,
+      description: referenceCode
     };
     fetch("/api/orders", {
       method: "POST",
@@ -125,8 +127,8 @@ function CheckoutPageContent() {
       body: JSON.stringify(payload),
     })
       .then((res) => res.json())
-      .then((order) => {
-        const orderId = `DH${order.id}`;
+      .then(() => {
+        const orderId = referenceCode;
         const acc = "VQRQACMGC9486";
         const bank = "MBBank";
         const amount = totalAmount;
