@@ -6,24 +6,58 @@ import {
   Bars3Icon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { useCartStore } from "@/store/cart-store";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "./ui/avatar";
+
+interface User {
+  id: string;
+  email: string;
+  role: "CUSTOMER" | "ADMIN" | string;
+}
 
 export const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
-  const { items } = useCartStore();
-  const cartCount = items.reduce((acc, item) => acc + item.quantity, 0);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
+    const storedUser = localStorage.getItem("ecom_user");
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch {
+        setUser(null);
+      }
+    }
+
     const handleResize = () => {
       if (window.innerWidth >= 768) {
         setMobileOpen(false);
       }
     };
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("ecom_user");
+    localStorage.removeItem("ecom_token");
+    setUser(null);
+    window.location.href = "/sign-in";
+  };
+
+  const getInitial = (email: string) => {
+    return email.charAt(0).toUpperCase();
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-white shadow">
@@ -42,24 +76,52 @@ export const Navbar = () => {
           {/* <Link href="/transactions" className="hover:text-blue-600 cursor-pointer">
             Transactions
           </Link> */}
-           <Link href="/dashboard" className="hover:text-blue-600 cursor-pointer">
+          {/* <Link href="/dashboard" className="hover:text-blue-600 cursor-pointer">
             Dashboard
-          </Link>
+          </Link> */}
+          {user?.role === "ADMIN" && (
+            <Link href="/admin" className="hover:text-blue-600 cursor-pointer">
+              Admin
+            </Link>
+          )}
         </div>
         <div className="flex items-center space-x-4">
           <Link href="/checkout" className="relative">
             <ShoppingCartIcon className="h-6 w-6" />
-            {cartCount > 0 && (
+            {/* {cartCount > 0 && (
               <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
                 {cartCount}
               </span>
-            )}
+            )} */}
           </Link>
-          {/* <Link href="/sign-in">
-            <Button variant="outline" className="cursor-pointer">
-              Login
-            </Button>
-          </Link> */}
+          {user?.email ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button aria-label="User menu" className="cursor-pointer">
+                  <Avatar>
+                    <AvatarFallback>{getInitial(user?.email)}</AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem className="cursor-default select-none">
+                  {user?.email}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-red-600"
+                >
+                  Đăng xuất
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link href="/sign-in">
+              <Button variant="outline" className="cursor-pointer">
+                Login
+              </Button>
+            </Link>
+          )}
           <Button
             variant="ghost"
             className="md:hidden cursor-pointer"
@@ -100,14 +162,16 @@ export const Navbar = () => {
                 Checkout
               </Link>
             </li>
-            {/* <li>
-              <Link
-                href="/transactions"
-                className="block hover:text-blue-600 cursor-pointer"
-              >
-                Transactions
-              </Link>
-            </li> */}
+            {user?.role === "ADMIN" && (
+              <li>
+                <Link
+                  href="/admin"
+                  className="block hover:text-blue-600 cursor-pointer"
+                >
+                  Admin
+                </Link>
+              </li>
+            )}
           </ul>
         </nav>
       )}

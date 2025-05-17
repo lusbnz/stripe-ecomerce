@@ -1,12 +1,12 @@
 "use client";
 
-import Stripe from "stripe";
 import { useEffect, useState } from "react";
 import { ProductCard } from "./product-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Product } from "@/app/admin/products/page";
 
 interface Props {
-  products: Stripe.Product[];
+  products: Product[];
 }
 
 export const Carousel = ({ products }: Props) => {

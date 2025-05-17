@@ -1,22 +1,9 @@
 "use client";
 
-import { useCartStore } from "@/store/cart-store";
 import Link from "next/link";
-import { useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 function SuccessPageContent() {
-  const { removeItemById } = useCartStore();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const ids = searchParams.get("ids");
-    if (ids) {
-      const idArray = ids.split(",");
-      idArray.forEach((id) => removeItemById(id));
-    }
-  }, [searchParams, removeItemById]);
-
   return (
     <div className="container mx-auto px-4 py-8 text-center">
       <h1 className="text-3xl font-bold mb-4">Payment Successful!</h1>

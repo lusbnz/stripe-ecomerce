@@ -11,26 +11,47 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+
+  const validateEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const signup = async () => {
     setErrorMsg('');
     setSuccessMsg('');
+    setFieldErrors({});
 
-    if (!email || !password) {
-      setErrorMsg('Email và mật khẩu là bắt buộc');
+    const errors: typeof fieldErrors = {};
+
+    if (!email) {
+      errors.email = 'Email không được để trống';
+    } else if (!validateEmail(email)) {
+      errors.email = 'Email không hợp lệ';
+    }
+
+    if (!password) {
+      errors.password = 'Mật khẩu không được để trống';
+    } else if (password.length < 6) {
+      errors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
-    const res = await fetch('/api/sign-up', {
+    const res = await fetch('/api/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ name: email, email, password, role: 'CUSTOMER' }),
     });
 
     const data = await res.json();
 
     if (res.ok) {
       setSuccessMsg('Tạo tài khoản thành công! Bạn có thể đăng nhập.');
+      setEmail('');
+      setPassword('');
     } else {
       setErrorMsg(data.error || 'Đăng ký thất bại');
     }
@@ -46,8 +67,14 @@ export default function SignupPage() {
           id="email"
           placeholder="you@example.com"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setFieldErrors((prev) => ({ ...prev, email: undefined }));
+            setErrorMsg('');
+            setSuccessMsg('');
+          }}
         />
+        {fieldErrors.email && <p className="text-sm text-red-500">{fieldErrors.email}</p>}
       </div>
 
       <div className="space-y-2">
@@ -57,8 +84,14 @@ export default function SignupPage() {
           type="password"
           placeholder="********"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            setFieldErrors((prev) => ({ ...prev, password: undefined }));
+            setErrorMsg('');
+            setSuccessMsg('');
+          }}
         />
+        {fieldErrors.password && <p className="text-sm text-red-500">{fieldErrors.password}</p>}
       </div>
 
       {errorMsg && <p className="text-sm text-red-500">{errorMsg}</p>}

@@ -1,48 +1,87 @@
+"use client";
+
+import { Product } from "@/app/admin/products/page";
 import { ProductDetail } from "@/components/product-detail";
 import { ProductList } from "@/components/product-list";
-import { stripe } from "@/lib/stripe";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
-export default async function ProductPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+export default function ProductPage() {
+  const { id } = useParams();       
 
-  const product = await stripe.products.retrieve(id, {
-    expand: ["default_price"],
-  });
+  const [products, setProducts] = useState<Product>();
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const allProducts = await stripe.products.list({
-    expand: ["data.default_price"],
-  });
+  const fetchFeatureProducts = useCallback(() => {
+    setIsLoading(true);
+    fetch(`/api/products/${id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setProducts(data || []);
+      })
+      .catch((error) => {
+        console.error("Error fetching products:", error);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [id]);
+  
+  useEffect(() => {
+    if (!id) return;
+    fetchFeatureProducts();
+  }, [fetchFeatureProducts]);
 
-  const color = product.metadata?.Color?.toLowerCase() || "";
-  const category = product.metadata?.Category?.toLowerCase() || "";
+  useEffect(() => {
+    fetch("/api/products")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch products list");
+        return res.json();
+      })
+      .then((data: Product[]) => setAllProducts(data))
+      .catch((err) => console.error(err));
+  }, []);
 
-  const similarProducts = allProducts.data.filter((p) => {
-    if (p.id === product.id) return false;
+  const color = products?.color.toLowerCase() || "";
+  const category = products?.category?.toLowerCase() || "";
 
-    const pColor = p.metadata?.Color?.toLowerCase() || "";
-    const pCategory = p.metadata?.Category?.toLowerCase() || "";
+  const similarProducts = allProducts.filter((p) => {
+    if (p.id === products?.id) return false;
+
+    const pColor = p?.color?.toLowerCase() || "";
+    const pCategory = p?.category?.toLowerCase() || "";
 
     return (color && pColor === color) || (category && pCategory === category);
   });
 
-  const plainProduct = JSON.parse(JSON.stringify(product));
   const plainSimilar = JSON.parse(JSON.stringify(similarProducts));
 
   return (
     <div className="space-y-12 px-4 min-h-[70vh]">
-      <ProductDetail product={plainProduct} />
+      {isLoading ? (
+        <>
+          <div className="p-8">
+            <Skeleton className="h-8 w-1/3 mb-4" />
+            <Skeleton className="h-64 w-full mb-4" />
+            <Skeleton className="h-4 w-2/3 mb-2" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        </>
+      ) : (
+        <>
+          <ProductDetail product={products} />
 
-      {plainSimilar.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-bold text-center text-foreground mb-6">
-            Similar Products
-          </h2>
-          <ProductList products={plainSimilar} isDetail={true} />
-        </div>
+          {plainSimilar.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold text-center text-foreground mb-6">
+                Similar Products
+              </h2>
+              <ProductList products={plainSimilar} isDetail={true} />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -1,6 +1,5 @@
 "use client";
 
-import Stripe from "stripe";
 import { ProductCard } from "./product-card";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -14,9 +13,10 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "./ui/slider";
 import { Button } from "@/components/ui/button";
+import { Product } from "@/app/admin/products/page";
 
 interface Props {
-  products: Stripe.Product[];
+  products: Product[];
   isDetail: boolean;
 }
 
@@ -30,12 +30,12 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 3000000]);
   const [showPriceFilter, setShowPriceFilter] = useState<boolean>(false);
 
-  const getColorFromMetadata = (product: Stripe.Product): string => {
-    return product.metadata?.Color || product.metadata?.color || "";
+  const getColorFromMetadata = (product: Product): string => {
+    return product?.color || "";
   };
 
-  const getCategoryFromMetadata = (product: Stripe.Product): string => {
-    return product.metadata?.Category || product.metadata?.category || "";
+  const getCategoryFromMetadata = (product: Product): string => {
+    return product.category || "";
   };
 
   const filteredProduct = products.filter((product) => {
@@ -53,7 +53,7 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
     const categoryMatch =
       selectedCategory === "All" || category === selectedCategory.toLowerCase();
 
-    const price = (product.default_price as Stripe.Price)?.unit_amount || 0;
+    const price = product.pricing;
     const priceMatch = price >= priceRange[0] && price <= priceRange[1];
 
     return (

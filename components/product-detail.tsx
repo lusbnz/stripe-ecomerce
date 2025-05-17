@@ -1,98 +1,109 @@
 "use client";
 
-import Stripe from "stripe";
 import Image from "next/image";
 import { Button } from "./ui/button";
-import { useCartStore } from "@/store/cart-store";
 import { formatNumber } from "@/lib/common";
 import { useState, useEffect } from "react";
 import { Badge } from "./ui/badge";
+import { Product } from "@/app/admin/products/page";
 
 interface Props {
-  product: Stripe.Product;
+  product?: Product;
 }
 
 export const ProductDetail = ({ product }: Props) => {
-  const { addItem, items } = useCartStore();
-  const price = product.default_price as Stripe.Price;
-  const maxQuantity = parseInt(product.metadata?.Quantity || "1");
+  const initialMax = product?.quantity || 0;
   const [localQuantity, setLocalQuantity] = useState(1);
-  const [remainingQuantity, setRemainingQuantity] = useState(maxQuantity);
-
-  const calculateRemainingQuantity = () => {
-    const itemInCart = items.find((item) => item.id === product.id);
-    const quantityInCart = itemInCart ? itemInCart.quantity : 0;
-    setRemainingQuantity(maxQuantity - quantityInCart);
-  };
+  const [remainingQuantity, setRemainingQuantity] = useState(initialMax);
 
   useEffect(() => {
-    calculateRemainingQuantity();
-  }, [items, maxQuantity]);
+    if (!product) return;
+    try {
+      const stored = localStorage.getItem("cart");
+      const cart = stored
+        ? (JSON.parse(stored) as (Product & { quantity: number })[])
+        : [];
+      const item = cart.find((i) => i.id === product.id);
+      const used = item ? item.quantity : 0;
+      setRemainingQuantity(initialMax - used);
+      setLocalQuantity((prev) => Math.min(prev, initialMax - used) || 1);
+    } catch {
+      setRemainingQuantity(initialMax);
+    }
+  }, [product, initialMax]);
 
-  const handleAddToCart = () => {
-    if (localQuantity > 0 && localQuantity <= remainingQuantity) {
-      addItem({
-        id: product.id,
-        name: product.name,
-        price: price.unit_amount as number,
-        imageUrl: product.images ? product.images[0] : null,
-        quantity: localQuantity,
-      });
-
+  const handleAdd = () => {
+    if (!product || localQuantity < 1 || localQuantity > remainingQuantity)
+      return;
+    try {
+      const stored = localStorage.getItem("cart");
+      let cart: (Product & { quantity: number })[] = [];
+  
+      try {
+        const parsed = JSON.parse(stored || "[]");
+        cart = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        cart = [];
+      }
+  
+      const index = cart.findIndex((i) => i.id === product.id);
+      if (index >= 0) {
+        cart[index].quantity += localQuantity;
+      } else {
+        cart.push({ ...product, quantity: localQuantity });
+      }
+  
+      localStorage.setItem("cart", JSON.stringify(cart));
       setRemainingQuantity((prev) => prev - localQuantity);
       setLocalQuantity(1);
+    } catch (e) {
+      console.error("Failed to update cart", e);
     }
   };
 
   return (
     <div className="container mx-auto px-4 py-8 flex flex-col md:flex-row gap-8 items-center">
-      {product.images && product.images[0] && (
+      {product?.image && (
         <div className="relative h-96 w-full md:w-1/2 rounded-lg overflow-hidden">
           <Image
-            src={product.images[0]}
+            src={product.image}
             alt={product.name}
             fill
             loading="lazy"
-            objectFit="cover"
+            style={{ objectFit: "cover" }}
             className="transition duration-300 hover:opacity-90"
           />
         </div>
       )}
       <div className="md:w-1/2">
-        <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
+        <h1 className="text-3xl font-bold mb-4">{product?.name}</h1>
 
         <div className="flex flex-wrap items-center gap-2 mb-4">
-          {product.metadata?.Color && (
+          {product?.color && (
             <Badge className="cursor-pointer p-2 text-[15px]" variant="outline">
-              Color: {product.metadata.Color}
+              Color: {product.color}
             </Badge>
           )}
-          {product.metadata?.Category && (
+          {product?.category && (
             <Badge
               className="cursor-pointer p-2 text-[15px]"
               variant="secondary"
             >
-              Category: {product.metadata.Category}
+              Category: {product.category}
             </Badge>
           )}
         </div>
 
-        {product.metadata?.Description ? (
+        {product?.description && (
           <div
             className="prose prose-sm sm:prose lg:prose-lg mb-4 text-gray-700"
-            dangerouslySetInnerHTML={{
-              __html: product.metadata.Description,
-            }}
+            dangerouslySetInnerHTML={{ __html: product.description }}
           />
-        ) : (
-          product.description && (
-            <p className="text-gray-700 mb-4">{product.description}</p>
-          )
         )}
 
-        {price && price.unit_amount && (
+        {product && (
           <p className="text-lg font-semibold text-gray-900">
-            {formatNumber(price.unit_amount)} VNĐ
+            {formatNumber(product.pricing)} VNĐ
           </p>
         )}
 
@@ -104,6 +115,7 @@ export const ProductDetail = ({ product }: Props) => {
           <Button
             variant="outline"
             onClick={() => setLocalQuantity((prev) => Math.max(1, prev - 1))}
+            disabled={localQuantity <= 1}
           >
             –
           </Button>
@@ -111,10 +123,9 @@ export const ProductDetail = ({ product }: Props) => {
           <Button
             variant="outline"
             onClick={() =>
-              setLocalQuantity((prev) =>
-                prev < remainingQuantity ? prev + 1 : prev
-              )
+              setLocalQuantity((prev) => Math.min(remainingQuantity, prev + 1))
             }
+            disabled={localQuantity >= remainingQuantity}
           >
             +
           </Button>
@@ -122,8 +133,8 @@ export const ProductDetail = ({ product }: Props) => {
 
         <Button
           className="mt-4"
-          disabled={localQuantity > remainingQuantity}
-          onClick={handleAddToCart}
+          disabled={localQuantity < 1 || localQuantity > remainingQuantity}
+          onClick={handleAdd}
         >
           {localQuantity > remainingQuantity
             ? `Không thể mua quá ${remainingQuantity}`

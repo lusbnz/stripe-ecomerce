@@ -12,15 +12,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot } from "lucide-react";
 import { ProductCard } from "./product-card";
-import Stripe from "stripe";
 import { useState } from "react";
-
-export interface ProductWithPrice extends Stripe.Product {
-  default_price: Stripe.Price;
-}
+import { Product } from "@/app/admin/products/page";
 
 interface Props {
-  products: ProductWithPrice[];
+  products: Product[];
 }
 
 export function AISupportAgent({ products }: Props) {
@@ -29,7 +25,7 @@ export function AISupportAgent({ products }: Props) {
     []
   );
   const [input, setInput] = useState("");
-  const [matchedProducts, setMatchedProducts] = useState<Stripe.Product[]>([]);
+  const [matchedProducts, setMatchedProducts] = useState<Product[]>([]);
 
   const handleSend = () => {
     if (!input.trim()) return;
@@ -64,11 +60,9 @@ export function AISupportAgent({ products }: Props) {
     }
 
     const matchedAll = products.filter((product) => {
-      const color = product.metadata?.Color?.toLowerCase() || "";
-      const category = product.metadata?.Category?.toLowerCase() || "";
-      const price = parseInt(
-        product.default_price?.unit_amount?.toString() || "0"
-      );
+      const color = product?.color?.toLowerCase() || "";
+      const category = product?.category?.toLowerCase() || "";
+      const price = parseInt(product.pricing.toString() || "0");
 
       const keywordMatch = keywords.every(
         (kw) => color.includes(kw) || category.includes(kw)
@@ -78,11 +72,9 @@ export function AISupportAgent({ products }: Props) {
     });
 
     const matchedPartial = products.filter((product) => {
-      const color = product.metadata?.Color?.toLowerCase() || "";
-      const category = product.metadata?.Category?.toLowerCase() || "";
-      const price = parseInt(
-        product.default_price?.unit_amount?.toString() || "0"
-      );
+      const color = product?.color?.toLowerCase() || "";
+      const category = product?.category?.toLowerCase() || "";
+      const price = parseInt(product.pricing?.toString() || "0");
 
       const keywordMatch = keywords.some(
         (kw) => color.includes(kw) || category.includes(kw)
@@ -91,9 +83,6 @@ export function AISupportAgent({ products }: Props) {
 
       return keywordMatch && priceMatch;
     });
-
-    console.log("✅ matchedAll:", matchedAll.length);
-    console.log("✅ matchedPartial:", matchedPartial.length);
 
     if (matchedAll.length > 0) {
       setMatchedProducts(matchedAll);
@@ -158,7 +147,11 @@ export function AISupportAgent({ products }: Props) {
             {matchedProducts.length > 0 && (
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {matchedProducts.map((product, index) => (
-                  <ProductCard key={product.id} product={product} index={index} />
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    index={index}
+                  />
                 ))}
               </div>
             )}
