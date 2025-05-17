@@ -1,26 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
-import type { ResultSetHeader, RowDataPacket } from 'mysql2';
+import { supabase } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const id = url.pathname.split('/').pop();
 
-  try {
-    const [rows] = await pool.query<RowDataPacket[]>(
-      `SELECT c.id, c.name, c.email, c.role, c.created_at,
-              a.full_address, a.street, a.district, a.region, a.city
-       FROM User c
-       LEFT JOIN Address a ON c.address_id = a.id
-       WHERE c.id = ? AND c.role = 'CUSTOMER'`,
-      [id]
-    );
+  if (!id) {
+    return NextResponse.json({ error: 'Missing customer id' }, { status: 400 });
+  }
 
-    if (rows.length === 0) {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select(`
+        id, name, email, role, created_at,
+        addresses:address_id (
+          full_address, street, district, region, city
+        )
+      `)
+      .eq('id', id)
+      .eq('role', 'CUSTOMER')
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') { // not found
+        return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
+      }
+      throw error;
+    }
+
+    if (!data) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    return NextResponse.json(rows[0]);
+    return NextResponse.json(data);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: message }, { status: 500 });
@@ -32,30 +45,42 @@ export async function PUT(req: NextRequest) {
   const id = url.pathname.split('/').pop();
   const { name, email } = await req.json();
 
+  if (!id) {
+    return NextResponse.json({ error: 'Missing customer id' }, { status: 400 });
+  }
   if (!name || !email) {
     return NextResponse.json({ error: 'Missing name or email' }, { status: 400 });
   }
 
   try {
-    const [result] = await pool.query<ResultSetHeader>(
-      `UPDATE User SET name = ?, email = ? WHERE id = ? AND role = 'CUSTOMER'`,
-      [name, email, id]
-    );
+    const { data, error } = await supabase
+      .from('users')
+      .update({ name, email })
+      .eq('id', id)
+      .eq('role', 'CUSTOMER')
+      .select()
+      .single();
 
-    if (result.affectedRows === 0) {
+    if (error) throw error;
+    if (!data) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    const [updated] = await pool.query<RowDataPacket[]>(
-      `SELECT c.id, c.name, c.email, c.role, c.created_at,
-              a.full_address, a.street, a.district, a.region, a.city
-       FROM User c
-       LEFT JOIN Address a ON c.address_id = a.id
-       WHERE c.id = ?`,
-      [id]
-    );
+    // Lấy lại bản ghi sau cập nhật, kèm address
+    const { data: updatedUser, error: fetchError } = await supabase
+      .from('users')
+      .select(`
+        id, name, email, role, created_at,
+        addresses:address_id (
+          full_address, street, district, region, city
+        )
+      `)
+      .eq('id', id)
+      .single();
 
-    return NextResponse.json(updated[0]);
+    if (fetchError) throw fetchError;
+
+    return NextResponse.json(updatedUser);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: message }, { status: 500 });
@@ -66,22 +91,40 @@ export async function DELETE(req: NextRequest) {
   const url = new URL(req.url);
   const id = url.pathname.split('/').pop();
 
-  try {
-    const [custRows] = await pool.query<RowDataPacket[]>(
-      'SELECT address_id FROM User WHERE id = ? AND role = "CUSTOMER"',
-      [id]
-    );
+  if (!id) {
+    return NextResponse.json({ error: 'Missing customer id' }, { status: 400 });
+  }
 
-    if (custRows.length === 0) {
+  try {
+    // Lấy address_id trước khi xóa user
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('address_id')
+      .eq('id', id)
+      .eq('role', 'CUSTOMER')
+      .single();
+
+    if (userError || !userData) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    const addressId = custRows[0].address_id;
+    // Xóa user
+    const { error: deleteUserError } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', id)
+      .eq('role', 'CUSTOMER');
 
-    await pool.query('DELETE FROM User WHERE id = ?', [id]);
+    if (deleteUserError) throw deleteUserError;
 
-    if (addressId) {
-      await pool.query('DELETE FROM Address WHERE id = ?', [addressId]);
+    // Nếu có address_id thì xóa address luôn
+    if (userData.address_id) {
+      const { error: deleteAddressError } = await supabase
+        .from('addresses')
+        .delete()
+        .eq('id', userData.address_id);
+
+      if (deleteAddressError) throw deleteAddressError;
     }
 
     return NextResponse.json({ message: 'Customer deleted successfully' });

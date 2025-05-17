@@ -34,6 +34,9 @@ interface Order {
   status: string;
   created_at: string;
   updated_at: string;
+  users?: {
+    name?: string;
+  }
 }
 
 // function OrderModal({
@@ -327,7 +330,7 @@ export default function OrdersPage() {
                 <TableRow key={o.id} className="align-middle">
                   <TableCell>{o.id}</TableCell>
                   <TableCell>{o.amount}</TableCell>
-                  <TableCell>{o.customer_name || o.customer_id}</TableCell>
+                  <TableCell>{o?.users?.name}</TableCell>
                   <TableCell>{o.payment_method}</TableCell>
                   <TableCell>{o.status}</TableCell>
                   <TableCell>{new Date(o.created_at).toLocaleString()}</TableCell>

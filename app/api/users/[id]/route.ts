@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
-import type { ResultSetHeader, RowDataPacket } from 'mysql2';
+import { supabase } from '@/lib/supabase';
 
 export async function PUT(req: NextRequest) {
   const url = new URL(req.url);
@@ -12,17 +11,32 @@ export async function PUT(req: NextRequest) {
   }
 
   try {
-    const [result] = await pool.query<ResultSetHeader>(
-      `UPDATE User SET name=?, email=?, password=?, address_id=?, role=? WHERE id=?`,
-      [name, email, password, address_id, role || 'CUSTOMER', id]
-    );
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
+        name,
+        email,
+        password,
+        address_id,
+        role: role || 'CUSTOMER',
+      })
+      .eq('id', id);
 
-    if (result.affectedRows === 0) {
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
+    }
+
+    const { data: user, error: fetchError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (fetchError || !user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const [rows] = await pool.query<RowDataPacket[]>('SELECT * FROM User WHERE id = ?', [id]);
-    return NextResponse.json(rows[0], { status: 200 });
+    return NextResponse.json(user, { status: 200 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: message }, { status: 500 });
@@ -34,12 +48,16 @@ export async function DELETE(req: NextRequest) {
   const id = url.pathname.split('/').pop();
 
   try {
-    const [result] = await pool.query<ResultSetHeader>(
-      'DELETE FROM User WHERE id=?',
-      [id]
-    );
+    const { error: deleteError, count } = await supabase
+      .from('users')
+      .delete({ count: 'exact' })
+      .eq('id', id)
 
-    if (result.affectedRows === 0) {
+    if (deleteError) {
+      return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    }
+
+    if (!count) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 

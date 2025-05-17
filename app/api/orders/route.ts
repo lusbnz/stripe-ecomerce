@@ -1,16 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
-import type { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { supabase } from '@/lib/supabase';
 
 export async function GET() {
   try {
-    const [orders] = await pool.query<RowDataPacket[]>(`
-      SELECT o.id, o.amount, o.customer_id, u.name AS customer_name,
-             o.payment_method, o.description, o.address_id,
-             o.shipping_details, o.status, o.created_at, o.updated_at
-      FROM \`Order\` o
-      JOIN User u ON o.customer_id = u.id
-    `);
+    // Join giữa Order và User (customer)
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
+        id, amount, customer_id,
+        users!inner(name),
+        payment_method, description, address_id,
+        shipping_details, status, created_at, updated_at
+      `);
+
+    if (error) throw error;
+
+    // Supabase trả về user dưới key 'User'
+    // Nên mình chuyển lại key thành customer_name cho giống cũ
+    const orders = data?.map(order => ({
+      ...order,
+      customer_name: order.users?.[0]?.name || "",
+      User: undefined, // xóa key User
+    }));
+
     return NextResponse.json(orders);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
@@ -45,29 +57,35 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const [addressResult] = await pool.query<ResultSetHeader>(
-      `INSERT INTO Address (full_address, street, district, region, city)
-       VALUES (?, ?, ?, ?, ?)`,
-      [full_address, street, district, region, city]
-    );
+    // 1. Thêm địa chỉ
+    const { data: addressData, error: addressError } = await supabase
+      .from('addresses')
+      .insert([{ full_address, street, district, region, city }])
+      .select()
+      .single();
 
-    const address_id = addressResult.insertId;
+    if (addressError) throw addressError;
 
-    const [orderResult] = await pool.query<ResultSetHeader>(
-      `INSERT INTO \`Order\`
-       (amount, customer_id, payment_method, address_id, status, created_at, updated_at)
-       VALUES (?, ?, 'VNPAY', ?, 'PENDING', NOW(), NOW())`,
-      [amount, customer_id, address_id]
-    );
+    // 2. Thêm order (payment_method và status cứng như cũ)
+    const { data: orderData, error: orderError } = await supabase
+      .from('orders')
+      .insert([{
+        amount,
+        customer_id,
+        payment_method: 'VNPAY',
+        address_id: addressData.id,
+        status: 'PENDING',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }])
+      .select()
+      .single();
 
-    const order_id = orderResult.insertId;
+    if (orderError) throw orderError;
 
-    const [orderRows] = await pool.query<RowDataPacket[]>(
-      `SELECT * FROM \`Order\` WHERE id = ?`,
-      [order_id]
-    );
+    // Nếu bạn cần lưu products vào bảng khác, cần thực hiện ở đây (không có trong đoạn gốc)
 
-    return NextResponse.json(orderRows[0], { status: 201 });
+    return NextResponse.json(orderData, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: message }, { status: 500 });

@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { ResultSetHeader, RowDataPacket } from 'mysql2';
-import pool from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 
 export async function GET() {
-  try {
-    const [rows] = await pool.query<RowDataPacket[]>('SELECT * FROM User');
-    return NextResponse.json(rows);
-  } catch (error) {
+  const { data, error } = await supabase.from('users').select('*');
+
+  if (error) {
     console.error(error);
     return NextResponse.json({ error: "Fetched user failed" }, { status: 500 });
   }
+
+  return NextResponse.json(data);
 }
 
 export async function POST(req: NextRequest) {
@@ -19,17 +19,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
-  try {
-    const [result] = await pool.query<ResultSetHeader>(
-      'INSERT INTO User (name, email, password, address_id, role) VALUES (?, ?, ?, ?, ?)',
-      [name, email, password, address_id, role || 'CUSTOMER']
-    );
-    const insertId = result.insertId;
-    return NextResponse.json({ id: insertId, message: 'User created' }, { status: 201 });
-  } catch (error) {
+  const { data, error } = await supabase.from('users').insert([
+    {
+      name,
+      email,
+      password,
+      address_id,
+      role: role || 'CUSTOMER',
+    },
+  ]).select('id').single();
+
+  if (error) {
     console.error(error);
     return NextResponse.json({ error: "Created user failed" }, { status: 500 });
   }
+
+  return NextResponse.json({ id: data.id, message: 'User created' }, { status: 201 });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -39,29 +44,19 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Missing email or password' }, { status: 400 });
   }
 
-  try {
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM User WHERE email = ? AND password = ?',
-      [email, password]
-    );
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, name, email, role')
+    .eq('email', email)
+    .eq('password', password)
+    .maybeSingle();
 
-    const user = rows[0];
-
-    if (!user) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-    }
-
-    return NextResponse.json({
-      message: 'Login successful',
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Login failed' }, { status: 500 });
+  if (error || !data) {
+    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
   }
+
+  return NextResponse.json({
+    message: 'Login successful',
+    user: data,
+  });
 }

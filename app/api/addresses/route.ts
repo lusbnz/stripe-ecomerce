@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
-import type { ResultSetHeader } from 'mysql2';
+import { supabase } from '@/lib/supabase';
 
 export async function GET() {
   try {
-    const [rows] = await pool.query('SELECT * FROM Address');
-    return NextResponse.json(rows);
-  } catch (error: unknown) {
+    const { data, error } = await supabase
+      .from('addresses')
+      .select('*');
+
+    if (error) throw error;
+
+    return NextResponse.json(data);
+  } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: message }, { status: 500 });
   }
@@ -20,13 +24,24 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const [result] = await pool.query<ResultSetHeader>(
-      'INSERT INTO Address (full_address, street, district, region, city) VALUES (?, ?, ?, ?, ?)',
-      [full_address, street || "", district || '', region || '', city]
-    );
-    const insertId = result.insertId;
-    return NextResponse.json({ id: insertId, message: 'Address created' }, { status: 201 });
-  } catch (error: unknown) {
+    const { data, error } = await supabase
+      .from('addresses')
+      .insert([
+        {
+          full_address,
+          street: street || '',
+          district: district || '',
+          region: region || '',
+          city,
+        },
+      ])
+      .select('id')
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({ id: data.id, message: 'Address created' }, { status: 201 });
+  } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: message }, { status: 500 });
   }

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
-import type { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { supabase } from '@/lib/supabase';
 
 export async function PUT(req: NextRequest) {
   const { userId, currentPassword, newPassword } = await req.json();
@@ -10,22 +9,30 @@ export async function PUT(req: NextRequest) {
   }
 
   try {
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM User WHERE id = ? AND password = ?',
-      [userId, currentPassword]
-    );
+    const { data: user, error: fetchError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .eq('password', currentPassword)
+      .maybeSingle();
 
-    if (rows.length === 0) {
+    if (fetchError) {
+      console.error(fetchError);
+      return NextResponse.json({ error: 'Lỗi khi kiểm tra mật khẩu' }, { status: 500 });
+    }
+
+    if (!user) {
       return NextResponse.json({ error: 'Mật khẩu hiện tại không đúng' }, { status: 401 });
     }
 
-    const [result] = await pool.query<ResultSetHeader>(
-      'UPDATE User SET password = ? WHERE id = ?',
-      [newPassword, userId]
-    );
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ password: newPassword })
+      .eq('id', userId);
 
-    if (result.affectedRows === 0) {
-      return NextResponse.json({ error: 'Không tìm thấy người dùng' }, { status: 404 });
+    if (updateError) {
+      console.error(updateError);
+      return NextResponse.json({ error: 'Không thể cập nhật mật khẩu' }, { status: 500 });
     }
 
     return NextResponse.json({ message: 'Đổi mật khẩu thành công' });

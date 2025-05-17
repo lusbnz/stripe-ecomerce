@@ -1,23 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
-import type { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { supabase } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const id = url.pathname.split('/').pop();
 
-  try {
-    const [order] = await pool.query<RowDataPacket[]>(
-      `SELECT * FROM \`Order\` WHERE id = ?`,
-      [id]
-    );
+  if (!id) {
+    return NextResponse.json({ error: 'Missing order id' }, { status: 400 });
+  }
 
-    if (order.length === 0) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+  try {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+      }
+      throw error;
     }
 
-    return NextResponse.json(order[0]);
-  } catch (error) {
+    return NextResponse.json(data);
+  } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: message }, { status: 500 });
   }
@@ -31,26 +38,35 @@ export async function PUT(req: NextRequest) {
     address_id, shipping_details, status
   } = await req.json();
 
-  try {
-    const [result] = await pool.query<ResultSetHeader>(
-      `UPDATE \`Order\`
-       SET amount = ?, payment_method = ?, description = ?, address_id = ?,
-           shipping_details = ?, status = ?, updated_at = NOW()
-       WHERE id = ?`,
-      [amount, payment_method, description, address_id, shipping_details, status, id]
-    );
+  if (!id) {
+    return NextResponse.json({ error: 'Missing order id' }, { status: 400 });
+  }
 
-    if (result.affectedRows === 0) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+  try {
+    const { data, error } = await supabase
+      .from('orders')
+      .update({
+        amount,
+        payment_method,
+        description,
+        address_id,
+        shipping_details,
+        status,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+      }
+      throw error;
     }
 
-    const [updated] = await pool.query<RowDataPacket[]>(
-      `SELECT * FROM \`Order\` WHERE id = ?`,
-      [id]
-    );
-
-    return NextResponse.json(updated[0]);
-  } catch (error) {
+    return NextResponse.json(data);
+  } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: message }, { status: 500 });
   }
@@ -60,18 +76,25 @@ export async function DELETE(req: NextRequest) {
   const url = new URL(req.url);
   const id = url.pathname.split('/').pop();
 
-  try {
-    const [result] = await pool.query<ResultSetHeader>(
-      `DELETE FROM \`Order\` WHERE id = ?`,
-      [id]
-    );
+  if (!id) {
+    return NextResponse.json({ error: 'Missing order id' }, { status: 400 });
+  }
 
-    if (result.affectedRows === 0) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+  try {
+    const { error } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+      }
+      throw error;
     }
 
     return NextResponse.json({ message: 'Order deleted successfully' });
-  } catch (error) {
+  } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: message }, { status: 500 });
   }

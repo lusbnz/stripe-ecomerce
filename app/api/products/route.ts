@@ -1,23 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
-import type { ResultSetHeader, RowDataPacket } from 'mysql2';
+import { supabase } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const featured = url.searchParams.get("featured");
 
-  let sql: string;
-  const params: (string | number)[] = [];
-
-  if (featured === "1") {
-    sql = "SELECT * FROM Product ORDER BY created_at DESC LIMIT 5";
-  } else {
-    sql = "SELECT * FROM Product";
-  }
-
   try {
-    const [rows] = await pool.query<RowDataPacket[]>(sql, params);
-    return NextResponse.json(rows);
+    let query = supabase
+      .from('products')
+      .select('*');
+
+    if (featured === "1") {
+      query = query.order('created_at', { ascending: false }).limit(5);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -32,21 +35,28 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const [result] = await pool.query<ResultSetHeader>(
-      'INSERT INTO Product (name, description, pricing, image, quantity, color, category) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, description || '', pricing, image || '', quantity, color, category]
-    );
-    const insertId = result.insertId;
-    
-    const [rows] = await pool.query<RowDataPacket[]>(
-      'SELECT * FROM Product WHERE id = ?',
-      [insertId]
-    );
-    
-    return NextResponse.json(rows[0], { status: 201 });
+    const { data, error } = await supabase
+      .from('products')
+      .insert([
+        {
+          name,
+          description: description || '',
+          pricing,
+          image: image || '',
+          quantity,
+          color,
+          category
+        }
+      ])
+      .select('*') 
 
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(data?.[0], { status: 201 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

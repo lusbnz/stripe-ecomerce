@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
-import type { ResultSetHeader, RowDataPacket } from 'mysql2';
+import { supabase } from '@/lib/supabase';
 
 export async function GET() {
   try {
-    const [rows] = await pool.query<RowDataPacket[]>(
-      `SELECT c.id, c.name, c.email, c.role, c.created_at, 
-              a.full_address, a.street, a.district, a.region, a.city
-       FROM User c
-       LEFT JOIN Address a ON c.address_id = a.id
-       WHERE c.role = 'CUSTOMER'`
-    );
-    return NextResponse.json(rows);
+    const { data, error } = await supabase
+      .from('users')
+      .select(`
+        id, name, email, role, created_at,
+        addresses:address_id (
+          full_address, street, district, region, city
+        )
+      `)
+      .eq('role', 'CUSTOMER');
+
+    if (error) throw error;
+
+    return NextResponse.json(data);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: message }, { status: 500 });
@@ -26,24 +30,35 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const [result] = await pool.query<ResultSetHeader>(
-      `INSERT INTO User (name, email, password, role, created_at)
-       VALUES (?, ?, '12345678', 'CUSTOMER', NOW())`,
-      [name, email]
-    );
+    const { data: insertedUser, error: insertError } = await supabase
+      .from('users')
+      .insert({
+        name,
+        email,
+        password: '12345678',  // Thường bạn sẽ hash mật khẩu, đây chỉ demo
+        role: 'CUSTOMER',
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
 
-    const customerId = result.insertId;
+    if (insertError) throw insertError;
 
-    const [rows] = await pool.query<RowDataPacket[]>(
-      `SELECT c.id, c.name, c.email, c.role, c.created_at,
-              a.full_address, a.street, a.district, a.region, a.city
-       FROM User c
-       LEFT JOIN Address a ON c.address_id = a.id
-       WHERE c.id = ?`,
-      [customerId]
-    );
+    // Lấy thêm thông tin Address (nếu có)
+    const { data: userWithAddress, error: fetchError } = await supabase
+      .from('users')
+      .select(`
+        id, name, email, role, created_at,
+        addresses:address_id (
+          full_address, street, district, region, city
+        )
+      `)
+      .eq('id', insertedUser.id)
+      .single();
 
-    return NextResponse.json(rows[0], { status: 201 });
+    if (fetchError) throw fetchError;
+
+    return NextResponse.json(userWithAddress, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ error: message }, { status: 500 });
