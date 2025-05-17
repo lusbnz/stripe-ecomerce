@@ -59,10 +59,17 @@ export async function POST(req: NextRequest) {
 
   try {
     for (const item of products) {
+      const productId = Number(item.id);
+      const quantity = Number(item.quantity);
+
+      if (!productId || isNaN(productId) || !quantity || isNaN(quantity)) {
+        return NextResponse.json({ error: 'Thiếu hoặc sai định dạng productId/quantity' }, { status: 400 });
+      }
+
       const { data: product, error: fetchErr } = await supabase
         .from('products')
         .select('quantity')
-        .eq('id', item.productId)
+        .eq('id', item.id)
         .single();
 
       if (fetchErr) {
@@ -76,7 +83,7 @@ export async function POST(req: NextRequest) {
       const { error: updateErr } = await supabase
         .from('products')
         .update({ quantity: product.quantity - item.quantity })
-        .eq('id', item.productId);
+        .eq('id', item.id);
 
       if (updateErr) {
         return NextResponse.json({ error: updateErr.message }, { status: 500 });

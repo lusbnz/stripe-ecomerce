@@ -141,8 +141,6 @@ function CheckoutPageContent() {
       })
       .finally(() => {
         setLoading(false);
-        updateLocalStorage([]);
-        setSelectedIds([]);
       });
   };
 
