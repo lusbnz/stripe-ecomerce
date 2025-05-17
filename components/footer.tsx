@@ -19,7 +19,7 @@ export function Footer() {
           <Link href="/products" className="hover:underline">
             Products
           </Link>
-          <Link href="/cart" className="hover:underline">
+          <Link href="/checkout" className="hover:underline">
             Cart
           </Link>
         </div>

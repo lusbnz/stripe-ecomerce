@@ -47,7 +47,7 @@ function CheckoutPageContent() {
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
+      prev.includes(id) ? prev?.filter((itemId) => itemId !== id) : [...prev, id]
     );
   };
 
@@ -64,17 +64,17 @@ function CheckoutPageContent() {
         ? { ...it, quantity: it.quantity - 1 }
         : it
     );
-    updateLocalStorage(updated.filter((it) => it.quantity > 0));
+    updateLocalStorage(updated?.filter((it) => it.quantity > 0));
   };
 
   const removeItemById = (id: string) => {
-    const updated = items.filter((it) => it.id !== id);
+    const updated = items?.filter((it) => it.id !== id);
     updateLocalStorage(updated);
     setSelectedIds((prev) => prev.filter((itemId) => itemId !== id));
   };
 
-  const selectedItems = items.filter((item) => selectedIds.includes(item.id));
-  const total = selectedItems.reduce(
+  const selectedItems = items?.filter((item) => selectedIds.includes(item.id));
+  const total = selectedItems?.reduce(
     (acc, item) => acc + item.pricing * item.quantity,
     0
   );
