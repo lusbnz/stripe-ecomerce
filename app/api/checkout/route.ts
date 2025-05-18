@@ -24,7 +24,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid description format' }, { status: 400 });
     }
 
-    // 1. Tìm đơn hàng
     const { data: orderData, error: findError } = await supabase
       .from('orders')
       .select('*')
@@ -38,7 +37,6 @@ export async function POST(request: NextRequest) {
 
     console.log('[Webhook] Found order:', orderData);
 
-    // 2. Cập nhật trạng thái đơn hàng
     const { data: updatedOrder, error: updateError } = await supabase
       .from('orders')
       .update({
@@ -59,10 +57,9 @@ export async function POST(request: NextRequest) {
     console.log('[Webhook] Updated order:', updatedOrder);
 
     return NextResponse.redirect(new URL('/success', request.url));
-    // return NextResponse.json({ received: true, order: updatedOrder });
 
   } catch (error) {
     console.error('[Webhook] Handler error:', error);
-    return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 });
+    return NextResponse.json({ error:  error instanceof Error ? error.message : error }, { status: 500 });
   }
 }
