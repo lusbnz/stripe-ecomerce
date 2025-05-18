@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[Webhook] Updated order:', updatedOrder);
 
-    return NextResponse.redirect(new URL('/success', request.url));
+    return NextResponse.json({ success: true });
 
   } catch (error) {
     console.error('[Webhook] Handler error:', error);

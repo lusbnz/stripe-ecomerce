@@ -132,8 +132,11 @@ function CheckoutPageContent() {
         const bank = "MBBank";
         const amount = totalAmount;
         const des = orderId;
+        const redirectUrl = encodeURIComponent(
+          `https://stripe-ecomerce.vercel.app/success?order=${orderId}`
+        );
 
-        const qr = `https://qr.sepay.vn/img?acc=${acc}&bank=${bank}&amount=${amount}&des=${des}`;
+        const qr = `https://qr.sepay.vn/img?acc=${acc}&bank=${bank}&amount=${amount}&des=${des}&redirect=${redirectUrl}`;
         setQrUrl(qr);
       })
       .catch((error) => {
