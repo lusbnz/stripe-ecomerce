@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+const clients = new Map<string, WritableStreamDefaultWriter>();
+
 export async function POST(request: NextRequest) {
   try {
     const event = await request.json();
     console.log('[Webhook] Received event:', event);
 
-    const {
-      gateway,
-      referenceCode,
-      description,
-    } = event;
+    const { gateway, referenceCode, description } = event;
 
     console.log('[Webhook] referenceCode:', referenceCode);
     console.log('[Webhook] gateway:', gateway);
@@ -35,6 +33,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
+    const products = orderData.products || [];
+    if (products.length > 0) {
+      for (const product of products) {
+        const { id, quantity } = product;
+
+        const { data: productData, error: productError } = await supabase
+          .from('products')
+          .select('quantity')
+          .eq('id', id)
+          .single();
+
+        if (productError || !productData) {
+          console.error(`[Webhook] Product ${id} not found:`, productError);
+          continue;
+        }
+
+        const newQuantity = productData.quantity - quantity;
+        if (newQuantity < 0) {
+          console.error(`[Webhook] Insufficient quantity for product ${id}`);
+          continue;
+        }
+
+        const { error: updateProductError } = await supabase
+          .from('products')
+          .update({ quantity: newQuantity })
+          .eq('id', id);
+
+        if (updateProductError) {
+          console.error(`[Webhook] Error updating product ${id}:`, updateProductError);
+          continue;
+        }
+
+        console.log(`[Webhook] Updated product ${id} quantity to ${newQuantity}`);
+      }
+    }
+
     console.log('[Webhook] Found order:', orderData);
 
     const { data: updatedOrder, error: updateError } = await supabase
@@ -56,10 +90,69 @@ export async function POST(request: NextRequest) {
 
     console.log('[Webhook] Updated order:', updatedOrder);
 
+    // Send SSE message to the client
+    const writer = clients.get(orderCode);
+    if (writer) {
+      try {
+        await writer.write(
+          new TextEncoder().encode(`data: ${JSON.stringify({ status: 'SUCCESS' })}\n\n`)
+        );
+        // Close the writer and remove from clients
+        await writer.close();
+        clients.delete(orderCode);
+      } catch (error) {
+        console.error('[Webhook] Error sending SSE message:', error);
+      }
+    } else {
+      console.log('[Webhook] No client found for orderCode:', orderCode);
+    }
+
     return NextResponse.json({ success: true });
 
   } catch (error) {
     console.error('[Webhook] Handler error:', error);
-    return NextResponse.json({ error:  error instanceof Error ? error.message : error }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: 500 }
+    );
   }
+}
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const orderCode = searchParams.get('orderCode');
+
+  if (!orderCode) {
+    return NextResponse.json(
+      { error: 'Missing orderCode parameter' },
+      { status: 400 }
+    );
+  }
+
+  const stream = new TransformStream();
+  const writer = stream.writable.getWriter();
+
+  clients.set(orderCode, writer);
+
+  const headers = {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+  };
+
+  const keepAlive = setInterval(() => {
+    writer.write(new TextEncoder().encode(': keep-alive\n\n')).catch(() => {
+      clearInterval(keepAlive);
+      clients.delete(orderCode);
+      writer.close();
+    });
+  }, 15000);
+
+  request.signal.addEventListener('abort', () => {
+    clearInterval(keepAlive);
+    clients.delete(orderCode);
+    writer.close();
+  });
+
+  return new NextResponse(stream.readable, { headers });
 }

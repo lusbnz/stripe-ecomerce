@@ -1,22 +1,22 @@
-'use client';
+"use client";
 
-import { useState, useEffect, Suspense } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatNumber } from '@/lib/common';
-import Image from 'next/image';
-import Link from 'next/link';
-import { ShoppingCart } from 'lucide-react';
-import { Product } from '../admin/products/page';
-import { Input } from '@/components/ui/input';
-import { redirect } from 'next/navigation';
+import { useState, useEffect, Suspense } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatNumber } from "@/lib/common";
+import Image from "next/image";
+import Link from "next/link";
+import { ShoppingCart } from "lucide-react";
+import { Product } from "../admin/products/page";
+import { Input } from "@/components/ui/input";
+import { redirect, useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 
 export interface Address {
   id?: string;
@@ -28,27 +28,31 @@ export interface Address {
 }
 
 function CheckoutPageContent() {
+  const router = useRouter();
   const [items, setItems] = useState<Product[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null
+  );
   const [address, setAddress] = useState<Address>({
-    full_address: '',
-    street: '',
-    district: '',
-    region: '',
-    city: '',
+    full_address: "",
+    street: "",
+    district: "",
+    region: "",
+    city: "",
   });
+  const [orderCode, setOrderCode] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('cart');
+    const stored = localStorage.getItem("cart");
     if (stored) {
       setItems(JSON.parse(stored));
     }
 
-    const user = JSON.parse(localStorage.getItem('ecom_user') || '{}');
+    const user = JSON.parse(localStorage.getItem("ecom_user") || "{}");
     if (user.id) {
       fetch(`/api/addresses?user_id=${user.id}`)
         .then((res) => res.json())
@@ -56,10 +60,36 @@ function CheckoutPageContent() {
           setAddresses(data.data || []);
         })
         .catch((error) => {
-          console.error('Error fetching addresses:', error);
+          console.error("Error fetching addresses:", error);
         });
     }
   }, []);
+
+  useEffect(() => {
+    if (!orderCode && !qrUrl) return;
+
+    // Thiết lập SSE
+    const eventSource = new EventSource(`/api/checkout?orderCode=${orderCode}`);
+
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('data.status', data.status);
+      if (data.status === 'SUCCESS') {
+        router.push('/success');
+        eventSource.close();
+      }
+    };
+
+    eventSource.onerror = () => {
+      console.error('SSE error, closing connection');
+      eventSource.close();
+    };
+
+    // Đóng kết nối khi component unmount
+    return () => {
+      eventSource.close();
+    };
+  }, [orderCode, qrUrl, router]);
 
   useEffect(() => {
     if (selectedAddressId) {
@@ -75,31 +105,29 @@ function CheckoutPageContent() {
       }
     } else {
       setAddress({
-        full_address: '',
-        street: '',
-        district: '',
-        region: '',
-        city: '',
+        full_address: "",
+        street: "",
+        district: "",
+        region: "",
+        city: "",
       });
     }
   }, [selectedAddressId, addresses]);
 
   const updateLocalStorage = (updatedItems: Product[]) => {
     setItems(updatedItems);
-    localStorage.setItem('cart', JSON.stringify(updatedItems));
+    localStorage.setItem("cart", JSON.stringify(updatedItems));
   };
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id)
-        ? prev.filter((itemId) => itemId !== id)
-        : [...prev, id],
+      prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
     );
   };
 
   const addItem = (item: Product) => {
     const updated = items.map((it) =>
-      it.id === item.id ? { ...it, quantity: it.quantity + item.quantity } : it,
+      it.id === item.id ? { ...it, quantity: it.quantity + item.quantity } : it
     );
     updateLocalStorage(updated);
   };
@@ -108,7 +136,7 @@ function CheckoutPageContent() {
     const updated = items.map((it) =>
       it.id === id && it.quantity > 1
         ? { ...it, quantity: it.quantity - 1 }
-        : it,
+        : it
     );
     updateLocalStorage(updated.filter((it) => it.quantity > 0));
   };
@@ -122,15 +150,15 @@ function CheckoutPageContent() {
   const selectedItems = items.filter((item) => selectedIds.includes(item.id));
   const total = selectedItems.reduce(
     (acc, item) => acc + item.pricing * item.quantity,
-    0,
+    0
   );
 
   const isAddressValid =
-    address.full_address.trim() !== '' &&
-    address.street.trim() !== '' &&
-    address.district.trim() !== '' &&
-    address.region.trim() !== '' &&
-    address.city.trim() !== '';
+    address.full_address.trim() !== "" &&
+    address.street.trim() !== "" &&
+    address.district.trim() !== "" &&
+    address.region.trim() !== "" &&
+    address.city.trim() !== "";
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -141,12 +169,12 @@ function CheckoutPageContent() {
   };
 
   const handleCheckout = async () => {
-    const user = JSON.parse(localStorage.getItem('ecom_user') || '{}');
+    const user = JSON.parse(localStorage.getItem("ecom_user") || "{}");
     if (!user.id) {
-      redirect('/sign-in');
+      redirect("/sign-in");
     }
     if (!isAddressValid) {
-      alert('Vui lòng điền đầy đủ thông tin địa chỉ giao hàng');
+      alert("Vui lòng điền đầy đủ thông tin địa chỉ giao hàng");
       return;
     }
 
@@ -155,9 +183,9 @@ function CheckoutPageContent() {
 
     if (!selectedAddressId) {
       try {
-        const response = await fetch('/api/addresses', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const response = await fetch("/api/addresses", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userId: user.id,
             full_address: address.full_address,
@@ -170,17 +198,17 @@ function CheckoutPageContent() {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to save address');
+          throw new Error(errorData.error || "Failed to save address");
         }
 
         const { address: newAddress } = await response.json();
         if (!newAddress?.id) {
-          throw new Error('Address creation succeeded but no ID returned');
+          throw new Error("Address creation succeeded but no ID returned");
         }
         addressId = newAddress.id;
         setAddresses((prev) => [...prev, newAddress]);
       } catch (error) {
-        console.error(error || 'Failed to save address');
+        console.error(error || "Failed to save address");
         setLoading(false);
         return;
       }
@@ -188,10 +216,11 @@ function CheckoutPageContent() {
 
     const totalAmount = selectedItems.reduce(
       (sum, item) => sum + item.pricing * item.quantity,
-      0,
+      0
     );
 
     const referenceCode = `ORD${Date.now()}`;
+    setOrderCode(referenceCode);
     const payload = {
       amount: totalAmount,
       customer_id: user.id,
@@ -200,28 +229,28 @@ function CheckoutPageContent() {
       description: referenceCode,
     };
 
-    fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
       .then((res) => res.json())
       .then(() => {
         const orderId = referenceCode;
-        const acc = 'VQRQACMGC9486';
-        const bank = 'MBBank';
+        const acc = "VQRQACMGC9486";
+        const bank = "MBBank";
         const amount = totalAmount;
         const des = orderId;
         const redirectUrl = encodeURIComponent(
-          `https://stripe-ecomerce.vercel.app/success?order=${orderId}`,
+          `https://stripe-ecomerce.vercel.app/success?order=${orderId}`
         );
 
         const qr = `https://qr.sepay.vn/img?acc=${acc}&bank=${bank}&amount=${amount}&des=${des}&redirect=${redirectUrl}`;
         setQrUrl(qr);
       })
       .catch((error) => {
-        console.error('Error saving Order:', error);
-        alert('Failed to create order');
+        console.error("Error saving Order:", error);
+        alert("Failed to create order");
       })
       .finally(() => {
         setLoading(false);
@@ -325,7 +354,7 @@ function CheckoutPageContent() {
               ))}
             </ul>
             <div className="mt-6 text-right text-lg font-bold">
-              Selected Total:{' '}
+              Selected Total:{" "}
               <span className="text-primary">{formatNumber(total)} VND</span>
             </div>
           </CardContent>
@@ -346,9 +375,9 @@ function CheckoutPageContent() {
                 Select Address
               </label>
               <Select
-                value={selectedAddressId || ''}
+                value={selectedAddressId || ""}
                 onValueChange={(value) =>
-                  setSelectedAddressId(value === 'new' ? null : value)
+                  setSelectedAddressId(value === "new" ? null : value)
                 }
               >
                 <SelectTrigger id="address_select">
@@ -433,10 +462,7 @@ function CheckoutPageContent() {
               />
             </div>
             <div>
-              <label
-                className="block text-sm font-medium mb-1"
-                htmlFor="city"
-              >
+              <label className="block text-sm font-medium mb-1" htmlFor="city">
                 City
               </label>
               <Input
@@ -462,10 +488,10 @@ function CheckoutPageContent() {
           onClick={handleCheckout}
         >
           {loading
-            ? 'Generating QR...'
+            ? "Generating QR..."
             : selectedItems.length === 0
-            ? 'Select items to pay'
-            : 'Proceed to Payment'}
+            ? "Select items to pay"
+            : "Proceed to Payment"}
         </Button>
 
         {qrUrl && (
