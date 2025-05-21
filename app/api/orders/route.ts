@@ -3,7 +3,6 @@ import { supabase } from '@/lib/supabase';
 
 export async function GET() {
   try {
-    // Join giữa Order và User (customer)
     const { data, error } = await supabase
       .from('orders')
       .select(`
@@ -15,12 +14,10 @@ export async function GET() {
 
     if (error) throw error;
 
-    // Supabase trả về user dưới key 'User'
-    // Nên mình chuyển lại key thành customer_name cho giống cũ
     const orders = data?.map(order => ({
       ...order,
-      customer_name: order.users?.[0]?.name || "",
-      User: undefined, // xóa key User
+      customer_name: order.users?.[0]?.name || '',
+      users: undefined,
     }));
 
     return NextResponse.json(orders);
@@ -31,39 +28,61 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const {
-    amount,
-    customer_id,
-    full_address,
-    street,
-    district,
-    region,
-    city,
-    products,
-    description
-  } = await req.json();
+  const { amount, customer_id, address_id, products, description } = await req.json();
 
   if (
     !amount ||
     !customer_id ||
-    !full_address ||
-    !street ||
-    !district ||
-    !region ||
-    !city ||
+    !address_id ||
     !Array.isArray(products) ||
-    products.length === 0
+    products.length === 0 ||
+    !description?.trim()
   ) {
-    return NextResponse.json({ error: 'Missing required fields or products' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Missing required fields or products' },
+      { status: 400 },
+    );
   }
 
   try {
+    // Check if customer exists
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', customer_id)
+      .single();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 },
+      );
+    }
+
+    // Check if address exists
+    const { data: address, error: addressError } = await supabase
+      .from('addresses')
+      .select('id')
+      .eq('id', address_id)
+      .single();
+
+    if (addressError || !address) {
+      return NextResponse.json(
+        { error: 'Address not found' },
+        { status: 404 },
+      );
+    }
+
+    // Update product quantities
     for (const item of products) {
       const productId = Number(item.id);
       const quantity = Number(item.quantity);
 
       if (!productId || isNaN(productId) || !quantity || isNaN(quantity)) {
-        return NextResponse.json({ error: 'Thiếu hoặc sai định dạng productId/quantity' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'Invalid productId or quantity' },
+          { status: 400 },
+        );
       }
 
       const { data: product, error: fetchErr } = await supabase
@@ -77,7 +96,10 @@ export async function POST(req: NextRequest) {
       }
 
       if (!product || product.quantity < item.quantity) {
-        return NextResponse.json({ error: 'Sản phẩm không đủ hàng' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'Product out of stock' },
+          { status: 400 },
+        );
       }
 
       const { error: updateErr } = await supabase
@@ -90,34 +112,25 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 1. Thêm địa chỉ
-    const { data: addressData, error: addressError } = await supabase
-      .from('addresses')
-      .insert([{ full_address, street, district, region, city }])
-      .select()
-      .single();
-
-    if (addressError) throw addressError;
-
-    // 2. Thêm order (payment_method và status cứng như cũ)
+    // Insert order
     const { data: orderData, error: orderError } = await supabase
       .from('orders')
-      .insert([{
-        amount,
-        customer_id,
-        payment_method: 'VNPAY',
-        address_id: addressData.id,
-        status: 'PENDING',
-        description: description,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }])
+      .insert([
+        {
+          amount,
+          customer_id,
+          payment_method: 'VNPAY',
+          address_id,
+          status: 'PENDING',
+          description,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ])
       .select()
       .single();
 
     if (orderError) throw orderError;
-
-    // Nếu bạn cần lưu products vào bảng khác, cần thực hiện ở đây (không có trong đoạn gốc)
 
     return NextResponse.json(orderData, { status: 201 });
   } catch (error) {
