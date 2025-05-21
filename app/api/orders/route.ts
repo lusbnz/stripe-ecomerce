@@ -7,17 +7,15 @@ export async function GET() {
       .from('orders')
       .select(`
         id, amount, customer_id,
-        users!inner(name),
+        users(name),
         payment_method, description, address_id,
         shipping_details, status, created_at, updated_at
       `);
 
     if (error) throw error;
 
-    const orders = data?.map(order => ({
+    const orders = (data).map((order) => ({
       ...order,
-      customer_name: order.users?.[0]?.name || '',
-      users: undefined,
     }));
 
     return NextResponse.json(orders);

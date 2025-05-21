@@ -225,9 +225,7 @@ export default function OrdersPage() {
 
   useEffect(() => { fetchOrders(); }, []);
 
-  const filtered = orders?.filter((o) =>
-    o?.users?.name?.toLowerCase()?.includes(filters.search.toLowerCase())
-  );
+  const filtered = orders;
 
   // function handleSave(order: Order) {
   //   setIsSaving(true);
