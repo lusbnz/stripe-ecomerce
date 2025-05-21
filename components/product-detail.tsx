@@ -38,21 +38,21 @@ export const ProductDetail = ({ product }: Props) => {
     try {
       const stored = localStorage.getItem("cart");
       let cart: (Product & { quantity: number })[] = [];
-  
+
       try {
         const parsed = JSON.parse(stored || "[]");
         cart = Array.isArray(parsed) ? parsed : [];
       } catch {
         cart = [];
       }
-  
+
       const index = cart.findIndex((i) => i.id === product.id);
       if (index >= 0) {
         cart[index].quantity += localQuantity;
       } else {
         cart.push({ ...product, quantity: localQuantity });
       }
-  
+
       localStorage.setItem("cart", JSON.stringify(cart));
       setRemainingQuantity((prev) => prev - localQuantity);
       setLocalQuantity(1);
@@ -84,12 +84,12 @@ export const ProductDetail = ({ product }: Props) => {
               Color: {product.color}
             </Badge>
           )}
-          {product?.category && (
+          {product?.category_name && (
             <Badge
               className="cursor-pointer p-2 text-[15px]"
               variant="secondary"
             >
-              Category: {product.category}
+              Category: {product.category_name}
             </Badge>
           )}
         </div>

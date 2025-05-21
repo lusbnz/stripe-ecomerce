@@ -1,7 +1,7 @@
 "use client";
 
 import { ProductCard } from "./product-card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,8 +20,12 @@ interface Props {
   isDetail: boolean;
 }
 
+interface Category {
+  id: number;
+  name: string;
+}
+
 const COLORS = ["All", "Brown", "White", "Black", "Gray", "Blue", "Silver"];
-const CATEGORIES = ["All", "Keycaps", "Mouse"];
 
 export const ProductList = ({ products, isDetail = false }: Props) => {
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -29,13 +33,17 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 3000000]);
   const [showPriceFilter, setShowPriceFilter] = useState<boolean>(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    fetch("/api/categories")
+      .then((res) => res.json())
+      .then((data) => setCategories(data || []))
+      .catch((error) => console.error("Error fetching categories:", error));
+  }, []);
 
   const getColorFromMetadata = (product: Product): string => {
     return product?.color || "";
-  };
-
-  const getCategoryFromMetadata = (product: Product): string => {
-    return product.category || "";
   };
 
   const filteredProduct = products.filter((product) => {
@@ -46,12 +54,10 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
       : false;
 
     const color = getColorFromMetadata(product).toLowerCase();
-    const category = getCategoryFromMetadata(product).toLowerCase();
 
     const colorMatch =
-      selectedColor === "All" || color === selectedColor.toLowerCase();
-    const categoryMatch =
-      selectedCategory === "All" || category === selectedCategory.toLowerCase();
+      color === selectedColor.toLowerCase();
+    const categoryMatch = product?.category_id === parseInt(selectedCategory);
 
     const price = product.pricing;
     const priceMatch = price >= priceRange[0] && price <= priceRange[1];
@@ -129,9 +135,13 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
-              {CATEGORIES.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
+              <SelectItem value="All">All</SelectItem>
+              {categories.map((category) => (
+                <SelectItem
+                  key={category.id}
+                  value={category.id.toString()}
+                >
+                  {category.name}
                 </SelectItem>
               ))}
             </SelectContent>

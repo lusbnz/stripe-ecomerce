@@ -8,10 +8,11 @@ export async function GET(req: NextRequest) {
   try {
     let query = supabase
       .from('products')
-      .select('*');
+      .select('*, categories(name)')
+      .order('created_at', { ascending: false });
 
     if (featured === "1") {
-      query = query.order('created_at', { ascending: false }).limit(5);
+      query = query.limit(5);
     }
 
     const { data, error } = await query;
@@ -20,7 +21,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data);
+    // Map data to include category_name
+    const formattedData = data.map((item) => ({
+      ...item,
+      category_name: item.categories?.name || "Uncategorized",
+      categories: undefined,
+    }));
+
+    return NextResponse.json(formattedData);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -28,9 +36,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { name, description, pricing, image, quantity, color, category } = await req.json();
+  const { name, description, pricing, image, quantity, color, category_id } = await req.json();
 
-  if (!name || !pricing) {
+  if (!name || !pricing || !category_id) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
@@ -45,16 +53,23 @@ export async function POST(req: NextRequest) {
           image: image || '',
           quantity,
           color,
-          category
-        }
+          category_id,
+        },
       ])
-      .select('*') 
+      .select('*, categories(name)')
+      .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data?.[0], { status: 201 });
+    const formattedData = {
+      ...data,
+      category_name: data.categories?.name || "Uncategorized",
+      categories: undefined,
+    };
+
+    return NextResponse.json(formattedData, { status: 201 });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

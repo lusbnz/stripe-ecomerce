@@ -32,17 +32,25 @@ import {
 } from "@/components/ui/select";
 
 export interface Product {
-  id: string;
+  id: number;
   name: string;
   pricing: number;
   created_at: string;
   updated_at: string;
   description: string;
-  category: string;
+  category_id: number;
+  category_name?: string;
   color: string;
   quantity: number;
   image: string;
 }
+
+interface Category {
+  id: number;
+  name: string;
+}
+
+const COLORS = ["Brown", "White", "Black", "Gray", "Blue", "Silver"];
 
 function ProductModal({
   open,
@@ -58,22 +66,33 @@ function ProductModal({
   isSaving: boolean;
 }) {
   const [formData, setFormData] = useState({
-    id: initialData?.id || "",
+    id: initialData?.id || 0,
     name: initialData?.name || "",
     pricing: initialData?.pricing || "",
-    category: initialData?.category || "",
+    category_id: initialData?.category_id || "",
     color: initialData?.color || "",
     quantity: initialData?.quantity || 0,
     description: initialData?.description || "",
     image: initialData?.image || "",
   });
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  // Fetch categories when modal opens
+  useEffect(() => {
+    if (open) {
+      fetch("/api/categories")
+        .then((res) => res.json())
+        .then((data) => setCategories(data || []))
+        .catch((error) => console.error("Error fetching categories:", error));
+    }
+  }, [open]);
 
   useEffect(() => {
     setFormData({
-      id: initialData?.id || "",
+      id: initialData?.id || 0,
       name: initialData?.name || "",
       pricing: initialData?.pricing || "",
-      category: initialData?.category || "",
+      category_id: initialData?.category_id || "",
       color: initialData?.color || "",
       quantity: initialData?.quantity || 0,
       description: initialData?.description || "",
@@ -104,7 +123,13 @@ function ProductModal({
     if (!formData.quantity || isNaN(Number(formData.quantity)))
       return alert("Quantity is required and must be a number");
     if (!formData.image.trim()) return alert("Image URL is required");
-    onSave(formData as Product);
+    if (!formData.category_id) return alert("Category is required");
+    if (!formData.color) return alert("Color is required");
+    onSave({
+      ...formData,
+      category_id: Number(formData.category_id),
+      pricing: Number(formData.pricing),
+    } as Product);
   }
 
   return (
@@ -132,6 +157,7 @@ function ProductModal({
               value={formData.name}
               onChange={onChange}
               required
+              className="w-full"
             />
           </div>
 
@@ -147,34 +173,60 @@ function ProductModal({
               onChange={onChange}
               placeholder="1234"
               required
+              className="w-full"
             />
           </div>
 
           <div>
             <label
               className="block text-sm font-medium mb-1"
-              htmlFor="category"
+              htmlFor="category_id"
             >
               Category
             </label>
-            <Input
-              id="category"
-              name="category"
-              value={formData.category}
-              onChange={onChange}
-            />
+            <Select
+              value={formData.category_id?.toString()}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, category_id: value }))
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem
+                    key={category.id}
+                    value={category.id.toString()}
+                  >
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1" htmlFor="color">
               Color
             </label>
-            <Input
-              id="color"
-              name="color"
+            <Select
               value={formData.color}
-              onChange={onChange}
-            />
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, color: value }))
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select color" />
+              </SelectTrigger>
+              <SelectContent>
+                {COLORS.map((color) => (
+                  <SelectItem key={color} value={color}>
+                    {color}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
@@ -192,6 +244,7 @@ function ProductModal({
               onChange={onChange}
               min={0}
               required
+              className="w-full"
             />
           </div>
 
@@ -223,6 +276,7 @@ function ProductModal({
               onChange={onChange}
               placeholder="https://..."
               required
+              className="w-full"
             />
           </div>
 
@@ -247,27 +301,39 @@ function ProductModal({
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<number | null>(null);
   const [filters, setFilters] = useState({
     search: "",
     minPrice: "",
     maxPrice: "",
-    category: "",
+    category_id: "",
+    color: "",
   });
 
-  function fetchProducts() {
+  function fetchData() {
     setIsLoading(true);
-    fetch("/api/products")
-      .then((res) => res.json())
-      .then((data) => {
-        setProducts(data || []);
+    Promise.all([
+      fetch("/api/products").then((res) => res.json()),
+      fetch("/api/categories").then((res) => res.json()),
+    ])
+      .then(([productsData, categoriesData]) => {
+        setProducts(
+          productsData.map((p: Product) => ({
+            ...p,
+            category_name:
+              categoriesData.find((c: Category) => c.id === p.category_id)?.name ||
+              "Uncategorized",
+          }))
+        );
+        setCategories(categoriesData);
       })
       .catch((error) => {
-        console.error("Error fetching products:", error);
+        console.error("Error fetching data:", error);
       })
       .finally(() => {
         setIsLoading(false);
@@ -275,7 +341,7 @@ export default function ProductsPage() {
   }
 
   useEffect(() => {
-    fetchProducts();
+    fetchData();
   }, []);
 
   const filteredProducts = products?.filter((product) => {
@@ -287,15 +353,19 @@ export default function ProductsPage() {
     const maxMatch =
       filters.maxPrice === "" || product.pricing <= Number(filters.maxPrice);
     const categoryMatch =
-      !filters.category || product.category === filters.category;
-    return nameMatch && minMatch && maxMatch && categoryMatch;
+      !filters.category_id || product.category_id === Number(filters.category_id);
+    const colorMatch =
+      !filters.color || product.color === filters.color;
+    return nameMatch && minMatch && maxMatch && categoryMatch && colorMatch;
   });
 
   function handleSave(product: Product) {
     setIsSaving(true);
     const isNew = !product.id;
 
-    const payload = isNew ? { ...product, id: undefined } : product;
+    const payload = isNew
+      ? { ...product, id: undefined, category_name: undefined }
+      : { ...product, category_name: undefined };
 
     fetch(isNew ? "/api/products" : `/api/products/${product.id}`, {
       method: isNew ? "POST" : "PUT",
@@ -305,11 +375,15 @@ export default function ProductsPage() {
       .then((res) => res.json())
       .then((savedProduct) => {
         setProducts((prev) => {
+          const categoryName =
+            categories.find((c) => c.id === savedProduct.category_id)?.name ||
+            "Uncategorized";
+          const updatedProduct = { ...savedProduct, category_name: categoryName };
           if (isNew) {
-            return [...prev, savedProduct];
+            return [...prev, updatedProduct];
           } else {
             return prev.map((p) =>
-              p.id === savedProduct.id ? savedProduct : p
+              p.id === savedProduct.id ? updatedProduct : p
             );
           }
         });
@@ -333,7 +407,7 @@ export default function ProductsPage() {
     setModalOpen(true);
   }
 
-  function handleDelete(productId: string) {
+  function handleDelete(productId: number) {
     setIsDeleting(productId);
     fetch(`/api/products/${productId}`, {
       method: "DELETE",
@@ -347,6 +421,16 @@ export default function ProductsPage() {
       .finally(() => {
         setIsDeleting(null);
       });
+  }
+
+  function handleResetFilters() {
+    setFilters({
+      search: "",
+      minPrice: "",
+      maxPrice: "",
+      category_id: "",
+      color: "",
+    });
   }
 
   return (
@@ -378,36 +462,52 @@ export default function ProductsPage() {
             }
           />
           <Select
-            value={filters.category}
+            value={filters.category_id}
             onValueChange={(value) =>
-              setFilters({ ...filters, category: value })
+              setFilters({ ...filters, category_id: value })
             }
           >
             <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Keycaps">Keycaps</SelectItem>
-              <SelectItem value="Mouse">Mouse</SelectItem>
+              {categories.map((category) => (
+                <SelectItem
+                  key={category.id}
+                  value={category.id.toString()}
+                >
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={filters.color}
+            onValueChange={(value) =>
+              setFilters({ ...filters, color: value })
+            }
+          >
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Select color" />
+            </SelectTrigger>
+            <SelectContent>
+              {COLORS.map((color) => (
+                <SelectItem key={color} value={color}>
+                  {color}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Button
             variant="outline"
             className="w-full sm:w-auto"
-            onClick={() =>
-              setFilters({
-                search: "",
-                minPrice: "",
-                maxPrice: "",
-                category: "",
-              })
-            }
+            onClick={handleResetFilters}
           >
             Reset
           </Button>
         </div>
         <div className="flex gap-4">
-          <Button size="sm" onClick={fetchProducts} disabled={isLoading}>
+          <Button size="sm" onClick={fetchData} disabled={isLoading}>
             Reload
           </Button>
           <Button size="sm" onClick={openAddModal} disabled={isLoading}>
@@ -496,7 +596,7 @@ export default function ProductsPage() {
                   </TableCell>
                   <TableCell>{product.name}</TableCell>
                   <TableCell>{product.pricing}</TableCell>
-                  <TableCell>{product.category}</TableCell>
+                  <TableCell>{product.category_name || "Uncategorized"}</TableCell>
                   <TableCell>{product.color}</TableCell>
                   <TableCell>{product.quantity}</TableCell>
                   <TableCell

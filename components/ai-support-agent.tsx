@@ -10,10 +10,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot } from "lucide-react";
+import { Bot, Loader2 } from "lucide-react";
 import { ProductCard } from "./product-card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Product } from "@/app/admin/products/page";
+import Fuse from "fuse.js";
 
 interface Props {
   products: Product[];
@@ -21,99 +22,118 @@ interface Props {
 
 export function AISupportAgent({ products }: Props) {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>(
-    []
-  );
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>([
+    { role: "ai", content: "Chào bạn! Tôi có thể giúp tìm sản phẩm theo màu sắc, loại, giá, hoặc thương hiệu. Ví dụ: 'mũ đỏ giá dưới 500k'." },
+  ]);
   const [input, setInput] = useState("");
   const [matchedProducts, setMatchedProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSend = () => {
+  // Khởi tạo Fuse.js cho fuzzy search
+  const fuse = new Fuse(products, {
+    keys: ["color", "category", "name"],
+    threshold: 0.3,
+    includeScore: true,
+  });
+
+  const parseQuery = (query: string) => {
+    const cleanedQuery = query
+      .replace(/tôi muốn mua|tôi muốn tìm|mua|tìm|sản phẩm|product/gi, "")
+      .trim()
+      .toLowerCase();
+
+    const priceUnderMatch = cleanedQuery.match(/giá dưới\s*(\d+)/);
+    const priceRangeMatch = cleanedQuery.match(/giá từ\s*(\d+)\s*(?:đến|-)\s*(\d+)/);
+    const categoryMatch = cleanedQuery.match(/danh mục\s*([\w\s]+)/);
+    const colorMatch = cleanedQuery.match(/màu\s*([\w\s]+)/);
+
+    return {
+      keywords: cleanedQuery.split(/\s+/).filter((kw) => kw),
+      minPrice: priceRangeMatch ? parseInt(priceRangeMatch[1]) : 0,
+      maxPrice: priceUnderMatch
+        ? parseInt(priceUnderMatch[1])
+        : priceRangeMatch
+        ? parseInt(priceRangeMatch[2])
+        : Infinity,
+      category: categoryMatch ? categoryMatch[1].trim() : "",
+      color: colorMatch ? colorMatch[1].trim() : "",
+    };
+  };
+
+  const handleSend = async () => {
     if (!input.trim()) return;
 
-    setMessages([]);
-    setMatchedProducts([]);
-
+    setIsLoading(true);
     const userMessage = { role: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
 
-    const cleanedInput = input
-      .replace(/tôi muốn mua|tôi muốn tìm|mua|tìm|sản phẩm|product/gi, "")
-      .trim();
+    // Phân tích truy vấn
+    const { keywords, minPrice, maxPrice, category, color } = parseQuery(input);
 
-    const term = cleanedInput.toLowerCase();
-    const keywords = term.split(/\s+/);
+    // Tìm kiếm với Fuse.js
+    let results = fuse.search(keywords.join(" ")).map((result) => result.item);
 
-    const priceUnderMatch = term.match(/giá dưới\s*(\d+)/);
-    const priceRangeMatch = term.match(/giá từ\s*(\d+)\s*(?:đến|-)\s*(\d+)/);
+    // Lọc theo các tiêu chí bổ sung
+    results = results.filter((product) => {
+      const productPrice = parseInt(product.pricing?.toString() || "0");
+      const productCategory = product.category?.toLowerCase() || "";
+      const productColor = product.color?.toLowerCase() || "";
 
-    let minPrice = 0;
-    let maxPrice = Infinity;
+      const priceMatch = productPrice >= minPrice && productPrice <= maxPrice;
+      const categoryMatch = category ? productCategory.includes(category) : true;
+      const colorMatch = color ? productColor.includes(color) : true;
 
-    if (priceUnderMatch) {
-      maxPrice = parseInt(priceUnderMatch[1]);
-    }
-
-    if (priceRangeMatch) {
-      minPrice = parseInt(priceRangeMatch[1]);
-      maxPrice = parseInt(priceRangeMatch[2]);
-    }
-
-    const matchedAll = products.filter((product) => {
-      const color = product?.color?.toLowerCase() || "";
-      const category = product?.category?.toLowerCase() || "";
-      const price = parseInt(product.pricing.toString() || "0");
-
-      const keywordMatch = keywords.every(
-        (kw) => color.includes(kw) || category.includes(kw)
-      );
-      const priceMatch = price >= minPrice && price <= maxPrice;
-      return keywordMatch && priceMatch;
+      return priceMatch && categoryMatch && colorMatch;
     });
 
-    const matchedPartial = products.filter((product) => {
-      const color = product?.color?.toLowerCase() || "";
-      const category = product?.category?.toLowerCase() || "";
-      const price = parseInt(product.pricing?.toString() || "0");
-
-      const keywordMatch = keywords.some(
-        (kw) => color.includes(kw) || category.includes(kw)
-      );
-      const priceMatch = price >= minPrice && price <= maxPrice;
-
-      return keywordMatch && priceMatch;
-    });
-
-    if (matchedAll.length > 0) {
-      setMatchedProducts(matchedAll);
+    // Xử lý kết quả
+    if (results.length > 0) {
+      setMatchedProducts(results.slice(0, 6)); // Giới hạn tối đa 6 sản phẩm
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
-          content: `Tôi tìm thấy ${matchedAll.length} sản phẩm phù hợp với "${cleanedInput}".`,
-        },
-      ]);
-    } else if (matchedPartial.length > 0) {
-      setMatchedProducts(matchedPartial);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          content: `Không tìm thấy sản phẩm khớp hoàn toàn với "${cleanedInput}". Tuy nhiên, tôi có ${matchedPartial.length} sản phẩm tương tự:`,
+          content: `Tôi tìm thấy ${results.length} sản phẩm phù hợp với yêu cầu của bạn.`,
         },
       ]);
     } else {
-      const fallback = products.slice(0, 3);
+      // Gợi ý sản phẩm tương tự
+      const fallback = products
+        .filter((p) => {
+          const price = parseInt(p.pricing?.toString() || "0");
+          return price >= minPrice && price <= maxPrice;
+        })
+        .slice(0, 3);
+
       setMatchedProducts(fallback);
       setMessages((prev) => [
         ...prev,
         {
           role: "ai",
-          content: `Xin lỗi, tôi không tìm thấy sản phẩm nào phù hợp với "${cleanedInput}". Bạn có thể tham khảo những sản phẩm sau:`,
+          content: `Không tìm thấy sản phẩm khớp chính xác. Dưới đây là một số gợi ý dựa trên yêu cầu của bạn:`,
         },
       ]);
     }
+
+    setIsLoading(false);
   };
+
+  // Xử lý phím Enter
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  // Tự động cuộn xuống cuối danh sách tin nhắn
+  useEffect(() => {
+    const scrollArea = document.querySelector(".scroll-area");
+    if (scrollArea) {
+      scrollArea.scrollTop = scrollArea.scrollHeight;
+    }
+  }, [messages, matchedProducts]);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -130,7 +150,7 @@ export function AISupportAgent({ products }: Props) {
         </DialogHeader>
 
         <div className="flex flex-col h-[720px]">
-          <ScrollArea className="flex-1 p-4 space-y-3 overflow-y-auto">
+          <ScrollArea className="flex-1 p-4 space-y-3 overflow-y-auto scroll-area">
             {messages.map((msg, idx) => (
               <div
                 key={idx}
@@ -143,6 +163,12 @@ export function AISupportAgent({ products }: Props) {
                 {msg.content}
               </div>
             ))}
+
+            {isLoading && (
+              <div className="flex justify-center">
+                <Loader2 className="w-6 h-6 animate-spin" />
+              </div>
+            )}
 
             {matchedProducts.length > 0 && (
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -162,11 +188,16 @@ export function AISupportAgent({ products }: Props) {
               rows={2}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Tìm sản phẩm theo màu hoặc loại (vd: Black, Key Caps)..."
+              onKeyDown={handleKeyDown}
+              placeholder="Tìm sản phẩm theo màu, loại, giá, hoặc thương hiệu (vd: mũ đỏ giá dưới 500k, thương hiệu Nike)..."
               className="resize-none mb-2"
             />
-            <Button onClick={handleSend} className="w-full cursor-pointer">
-              Send
+            <Button
+              onClick={handleSend}
+              disabled={isLoading}
+              className="w-full cursor-pointer"
+            >
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Send"}
             </Button>
           </div>
         </div>
