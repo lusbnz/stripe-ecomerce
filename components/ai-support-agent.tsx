@@ -77,7 +77,7 @@ export function AISupportAgent({ products }: Props) {
     // Lọc theo các tiêu chí bổ sung
     results = results.filter((product) => {
       const productPrice = parseInt(product.pricing?.toString() || "0");
-      const productCategory = product.category?.toLowerCase() || "";
+      const productCategory = product.category_name?.toLowerCase() || "";
       const productColor = product.color?.toLowerCase() || "";
 
       const priceMatch = productPrice >= minPrice && productPrice <= maxPrice;
