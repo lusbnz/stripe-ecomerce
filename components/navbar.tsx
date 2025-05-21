@@ -101,6 +101,7 @@ export const Navbar = () => {
         </Link>
         <div className="hidden md:flex space-x-6 cursor-pointer">
           <Link href="/">Home</Link>
+          <Link href="/about">About</Link>
           <Link href="/products" className="hover:text-blue-600 cursor-pointer">
             Products
           </Link>
@@ -186,6 +187,14 @@ export const Navbar = () => {
                 className="block hover:text-blue-600 cursor-pointer"
               >
                 Home
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/about"
+                className="block hover:text-blue-600 cursor-pointer"
+              >
+                About
               </Link>
             </li>
             <li>

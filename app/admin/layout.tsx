@@ -7,6 +7,8 @@ const adminLinks = [
   { href: "/", label: "Home" },
   { href: "/admin/products", label: "Products" },
   { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/feedback", label: "Feedback" },
+  { href: "/admin/banners", label: "Banners" },
 ];
 
 export default function AdminLayout({

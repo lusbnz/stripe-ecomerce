@@ -5,6 +5,7 @@ import { AISupportAgent } from "@/components/ai-support-agent";
 import { ProductList } from "@/components/product-list";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Product } from "../admin/products/page";
+import FeedbackButton from "@/components/feedback-box";
 
 const LIMIT = 10;
 
@@ -61,6 +62,7 @@ export default function ProductsPage() {
       </div>
 
       <AISupportAgent products={products} />
+      <FeedbackButton />
     </>
   );
 }
