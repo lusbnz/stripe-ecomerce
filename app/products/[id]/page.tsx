@@ -45,13 +45,13 @@ export default function ProductPage() {
   }, []);
 
   const color = products?.color.toLowerCase() || "";
-  const category = products?.category?.toLowerCase() || "";
+  const category = products?.category_name?.toLowerCase() || "";
 
   const similarProducts = allProducts.filter((p) => {
     if (p.id === products?.id) return false;
 
     const pColor = p?.color?.toLowerCase() || "";
-    const pCategory = p?.category?.toLowerCase() || "";
+    const pCategory = p?.category_name?.toLowerCase() || "";
 
     return (color && pColor === color) || (category && pCategory === category);
   });
