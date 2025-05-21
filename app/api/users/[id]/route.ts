@@ -7,7 +7,6 @@ interface User {
   name: string;
   email: string;
   password?: string;
-  address_id: number | null;
   role: string;
   created_at?: string;
   updated_at?: string;
@@ -17,7 +16,7 @@ export async function GET() {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('id, name, email, role, address_id, created_at');
+      .select('id, name, email, role, created_at');
 
     if (error) throw error;
 
@@ -31,7 +30,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password, address_id, role } = await req.json();
+    const { name, email, password, role } = await req.json();
 
     // Manual validation
     if (!name?.trim() || !email?.trim() || !password?.trim()) {
@@ -58,12 +57,6 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    if (address_id && isNaN(Number(address_id))) {
-      return NextResponse.json(
-        { error: 'Invalid address ID' },
-        { status: 400 },
-      );
-    }
 
     // Check if email already exists
     const { data: existingUser, error: userError } = await supabase
@@ -82,22 +75,6 @@ export async function POST(req: NextRequest) {
       throw userError;
     }
 
-    // Validate address_id if provided
-    if (address_id) {
-      const { data: address, error: addressError } = await supabase
-        .from('addresses')
-        .select('id')
-        .eq('id', address_id)
-        .single();
-
-      if (addressError || !address) {
-        return NextResponse.json(
-          { error: 'Address not found' },
-          { status: 404 },
-        );
-      }
-    }
-
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -109,7 +86,6 @@ export async function POST(req: NextRequest) {
           name: name || email,
           email,
           password: hashedPassword,
-          address_id: address_id || null,
           role: role || 'CUSTOMER',
           created_at: new Date().toISOString(),
         },

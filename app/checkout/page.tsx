@@ -30,7 +30,7 @@ export interface Address {
 function CheckoutPageContent() {
   const router = useRouter();
   const [items, setItems] = useState<Product[]>([]);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -119,7 +119,7 @@ function CheckoutPageContent() {
     localStorage.setItem("cart", JSON.stringify(updatedItems));
   };
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = (id: number) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
     );
@@ -132,7 +132,7 @@ function CheckoutPageContent() {
     updateLocalStorage(updated);
   };
 
-  const removeItem = (id: string) => {
+  const removeItem = (id: number) => {
     const updated = items.map((it) =>
       it.id === id && it.quantity > 1
         ? { ...it, quantity: it.quantity - 1 }
@@ -141,7 +141,7 @@ function CheckoutPageContent() {
     updateLocalStorage(updated.filter((it) => it.quantity > 0));
   };
 
-  const removeItemById = (id: string) => {
+  const removeItemById = (id: number) => {
     const updated = items.filter((it) => it.id !== id);
     updateLocalStorage(updated);
     setSelectedIds((prev) => prev.filter((itemId) => itemId !== id));
@@ -169,12 +169,12 @@ function CheckoutPageContent() {
   };
 
   const handleCheckout = async () => {
-    const user = JSON.parse(localStorage.getItem("ecom_user") || "{}");
+    const user = JSON.parse(localStorage.getItem('ecom_user') || '{}');
     if (!user.id) {
-      redirect("/sign-in");
+      redirect('/sign-in');
     }
     if (!isAddressValid) {
-      alert("Vui lòng điền đầy đủ thông tin địa chỉ giao hàng");
+      alert('Vui lòng điền đầy đủ thông tin địa chỉ giao hàng');
       return;
     }
 
@@ -183,9 +183,9 @@ function CheckoutPageContent() {
 
     if (!selectedAddressId) {
       try {
-        const response = await fetch("/api/addresses", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const response = await fetch('/api/addresses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: user.id,
             full_address: address.full_address,
@@ -198,17 +198,17 @@ function CheckoutPageContent() {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to save address");
+          throw new Error(errorData.error || 'Failed to save address');
         }
 
         const { address: newAddress } = await response.json();
         if (!newAddress?.id) {
-          throw new Error("Address creation succeeded but no ID returned");
+          throw new Error('Address creation succeeded but no ID returned');
         }
         addressId = newAddress.id;
         setAddresses((prev) => [...prev, newAddress]);
       } catch (error) {
-        console.error(error || "Failed to save address");
+        console.error(error || 'Failed to save address');
         setLoading(false);
         return;
       }
@@ -229,32 +229,71 @@ function CheckoutPageContent() {
       description: referenceCode,
     };
 
-    fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    })
-      .then((res) => res.json())
-      .then(() => {
-        const orderId = referenceCode;
-        const acc = "VQRQACMGC9486";
-        const bank = "MBBank";
-        const amount = totalAmount;
-        const des = orderId;
-        const redirectUrl = encodeURIComponent(
-          `https://stripe-ecomerce.vercel.app/success?order=${orderId}`
-        );
-
-        const qr = `https://qr.sepay.vn/img?acc=${acc}&bank=${bank}&amount=${amount}&des=${des}&redirect=${redirectUrl}`;
-        setQrUrl(qr);
-      })
-      .catch((error) => {
-        console.error("Error saving Order:", error);
-        alert("Failed to create order");
-      })
-      .finally(() => {
-        setLoading(false);
+    try {
+      // Create order
+      const orderResponse = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
+
+      if (!orderResponse.ok) {
+        const errorData = await orderResponse.json();
+        throw new Error(errorData.error || 'Failed to create order');
+      }
+
+      // Send order confirmation email
+      const emailPayload = {
+        userId: user.id,
+        orderCode: referenceCode,
+        totalAmount,
+        products: selectedItems.map(item => ({
+          id: item.id,
+          name: item.name,
+          pricing: item.pricing,
+          quantity: item.quantity,
+        })),
+        address: {
+          full_address: address.full_address,
+          street: address.street,
+          district: address.district,
+          region: address.region,
+          city: address.city,
+        },
+      };
+
+      const emailResponse = await fetch('/api/send-order-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emailPayload),
+      });
+
+      if (!emailResponse.ok) {
+        const errorData = await emailResponse.json();
+        console.error('Failed to send order confirmation email:', errorData.error);
+        // Continue even if email fails to avoid blocking checkout
+      } else {
+        console.log('Order confirmation email sent');
+      }
+
+      // Generate QR code
+      const orderId = referenceCode;
+      const acc = 'VQRQACMGC9486';
+      const bank = 'MBBank';
+      const amount = totalAmount;
+      const des = orderId;
+      const redirectUrl = encodeURIComponent(
+        `https://stripe-ecomerce.vercel.app/success?order=${orderId}`
+      );
+
+      const qr = `https://qr.sepay.vn/img?acc=${acc}&bank=${bank}&amount=${amount}&des=${des}&redirect=${redirectUrl}`;
+      setQrUrl(qr);
+    } catch (error) {
+      console.error('Error during checkout:', error);
+      alert('Failed to process checkout');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (items.length === 0) {

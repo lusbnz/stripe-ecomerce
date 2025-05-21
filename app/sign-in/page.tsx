@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import Link from "next/link";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { useRouter } from "next/navigation";
+import { useState } from 'react';
+import Link from 'next/link';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{
     email?: string;
     password?: string;
@@ -21,21 +21,21 @@ export default function LoginPage() {
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const login = async () => {
-    setErrorMsg("");
+    setErrorMsg('');
     setFieldErrors({});
 
     const errors: typeof fieldErrors = {};
 
     if (!email) {
-      errors.email = "Email không được bỏ trống";
+      errors.email = 'Email không được bỏ trống';
     } else if (!validateEmail(email)) {
-      errors.email = "Email không hợp lệ";
+      errors.email = 'Email không hợp lệ';
     }
 
     if (!password) {
-      errors.password = "Mật khẩu không được bỏ trống";
-    } else if (password.length < 6) {
-      errors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+      errors.password = 'Mật khẩu không được bỏ trống';
+    } else if (password.length < 8) {
+      errors.password = 'Mật khẩu phải có ít nhất 8 ký tự';
     }
 
     if (Object.keys(errors).length > 0) {
@@ -43,19 +43,23 @@ export default function LoginPage() {
       return;
     }
 
-    const res = await fetch("/api/users", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+    const res = await fetch('/api/users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
 
     const data = await res.json();
 
     if (res.ok) {
-      localStorage.setItem("ecom_user", JSON.stringify(data.user));
-      router.push("/"); 
+      if (!data.user.is_verified) {
+        setErrorMsg('Vui lòng xác minh email trước khi đăng nhập');
+        return;
+      }
+      localStorage.setItem('ecom_user', JSON.stringify(data.user));
+      router.push('/');
     } else {
-      setErrorMsg(data.error || "Đăng nhập thất bại");
+      setErrorMsg(data.error || 'Đăng nhập thất bại');
     }
   };
 
@@ -97,7 +101,7 @@ export default function LoginPage() {
       </Button>
 
       <p className="text-sm text-center">
-        Chưa có tài khoản?{" "}
+        Chưa có tài khoản?{' '}
         <Link href="/sign-up" className="text-blue-500 hover:underline">
           Đăng ký ngay
         </Link>

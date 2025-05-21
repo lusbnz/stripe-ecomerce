@@ -1,21 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import bcrypt from "bcrypt"
+import nodemailer from 'nodemailer';
+import crypto from 'crypto';
+
+// Configure nodemailer
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+async function sendVerificationEmail(email: string, token: string) {
+  const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/verify?token=${token}`;
+  
+  await transporter.sendMail({
+    from: '"Quốc Việt" <tslcvnm@gmail.com@gmail.com>',
+    to: email,
+    subject: 'Xác minh tài khoản của bạn',
+    html: `
+      <h1>Xác minh email</h1>
+      <p>Vui lòng nhấn vào link sau để xác minh tài khoản:</p>
+      <a href="${verificationUrl}">${verificationUrl}</a>
+      <p>Link này có hiệu lực trong 24 giờ.</p>
+    `,
+  });
+}
 
 export async function GET() {
-  const { data, error } = await supabase.from('users').select('*');
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, name, email, role, created_at, is_verified');
 
-  if (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Fetched user failed" }, { status: 500 });
+    if (error) throw error;
+
+    return NextResponse.json(data || []);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error fetching users:', message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  return NextResponse.json(data);
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password, address_id, role } = await req.json();
+    const { name, email, password, role } = await req.json();
 
     // Manual validation
     if (!name?.trim() || !email?.trim() || !password?.trim()) {
@@ -42,12 +75,6 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    if (address_id && isNaN(Number(address_id))) {
-      return NextResponse.json(
-        { error: 'Invalid address ID' },
-        { status: 400 },
-      );
-    }
 
     // Check if email already exists
     const { data: existingUser, error: userError } = await supabase
@@ -66,39 +93,24 @@ export async function POST(req: NextRequest) {
       throw userError;
     }
 
-    // Validate address_id if provided
-    if (address_id) {
-      const { data: address, error: addressError } = await supabase
-        .from('addresses')
-        .select('id')
-        .eq('id', address_id)
-        .single();
+    // Create verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
 
-      if (addressError || !address) {
-        return NextResponse.json(
-          { error: 'Address not found' },
-          { status: 404 },
-        );
-      }
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Insert user and select all fields
+    // Insert user
     const { data, error } = await supabase
       .from('users')
       .insert([
         {
-          name: name || email, // Fallback to email if name is empty
+          name: name || email,
           email,
-          password: hashedPassword,
-          address_id: address_id || null,
+          password: password,
           role: role || 'CUSTOMER',
           created_at: new Date().toISOString(),
+          verification_token: verificationToken,
+          is_verified: false,
         },
       ])
-      .select('*') // Select all fields
+      .select('*')
       .single();
 
     if (error || !data) {
@@ -109,8 +121,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Send verification email
+    await sendVerificationEmail(email, verificationToken);
+
     return NextResponse.json(
-      { message: 'User created', user: data },
+      { message: 'User created. Please check your email to verify your account.', user: data },
       { status: 201 },
     );
   } catch (error) {
@@ -121,25 +136,46 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const { email, password } = await req.json();
+  try {
+    const { email, password } = await req.json();
 
-  if (!email || !password) {
-    return NextResponse.json({ error: 'Missing email or password' }, { status: 400 });
+    if (!email || !password) {
+      return NextResponse.json({ error: 'Missing email or password' }, { status: 400 });
+    }
+
+    // Get user by email
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, name, email, password, role, is_verified')
+      .eq('email', email)
+      .single();
+
+      console.log('user', user);
+      console.log('error', error);
+
+    if (error || !user) {
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    }
+
+    // Verify password
+    const isPasswordValid = password === user.password;
+    if (!isPasswordValid) {
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    }
+
+    return NextResponse.json({
+      message: 'Login successful',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        is_verified: user.is_verified,
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error logging in:', message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const { data, error } = await supabase
-    .from('users')
-    .select('id, name, email, role')
-    .eq('email', email)
-    .eq('password', password)
-    .maybeSingle();
-
-  if (error || !data) {
-    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
-  }
-
-  return NextResponse.json({
-    message: 'Login successful',
-    user: data,
-  });
 }

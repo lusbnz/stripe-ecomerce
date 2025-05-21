@@ -31,8 +31,8 @@ export default function SignupPage() {
 
     if (!password) {
       errors.password = 'Mật khẩu không được để trống';
-    } else if (password.length < 6) {
-      errors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+    } else if (password.length < 8) {
+      errors.password = 'Mật khẩu phải có ít nhất 8 ký tự';
     }
 
     if (Object.keys(errors).length > 0) {
@@ -49,7 +49,7 @@ export default function SignupPage() {
     const data = await res.json();
 
     if (res.ok) {
-      setSuccessMsg('Tạo tài khoản thành công! Bạn có thể đăng nhập.');
+      setSuccessMsg('Đăng ký thành công! Vui lòng kiểm tra email để xác minh tài khoản.');
       setEmail('');
       setPassword('');
     } else {
