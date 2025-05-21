@@ -47,20 +47,25 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
   };
 
   const filteredProduct = products.filter((product) => {
-    const term = searchTerm.toLowerCase();
-    const nameMatch = product.name.toLowerCase().includes(term);
-    const descriptionMatch = product.description
-      ? product.description.toLowerCase().includes(term)
-      : false;
+    const term = searchTerm.toLowerCase().trim();
 
-    const color = getColorFromMetadata(product).toLowerCase();
+    const nameMatch = product.name?.toLowerCase().includes(term) ?? false;
 
+    const descriptionMatch =
+      product.description?.toLowerCase().includes(term) ?? false;
+
+    const color = getColorFromMetadata(product)?.toLowerCase() ?? "";
     const colorMatch =
+      selectedColor.toLowerCase() === "all" ||
       color === selectedColor.toLowerCase();
-    const categoryMatch = product?.category_id === parseInt(selectedCategory);
 
-    const price = product.pricing;
-    const priceMatch = price >= priceRange[0] && price <= priceRange[1];
+    const categoryMatch =
+      selectedCategory.toLowerCase() === "all" ||
+      product?.category_id === parseInt(selectedCategory);
+
+    const price = product.pricing ?? 0;
+    const priceMatch =
+      price >= (priceRange[0] ?? 0) && price <= (priceRange[1] ?? Infinity);
 
     return (
       (nameMatch || descriptionMatch || color.includes(term)) &&
@@ -137,10 +142,7 @@ export const ProductList = ({ products, isDetail = false }: Props) => {
             <SelectContent>
               <SelectItem value="All">All</SelectItem>
               {categories.map((category) => (
-                <SelectItem
-                  key={category.id}
-                  value={category.id.toString()}
-                >
+                <SelectItem key={category.id} value={category.id.toString()}>
                   {category.name}
                 </SelectItem>
               ))}
