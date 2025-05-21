@@ -66,30 +66,43 @@ function CheckoutPageContent() {
   }, []);
 
   useEffect(() => {
-    if (!orderCode && !qrUrl) return;
+    if (!orderCode) return;
 
-    // Thiết lập SSE
-    const eventSource = new EventSource(`/api/checkout?orderCode=${orderCode}`);
+    const connectSSE = () => {
+      console.log(`Establishing SSE for orderCode: ${orderCode}`);
+      const eventSource = new EventSource(`/api/checkout?orderCode=${orderCode}`);
 
-    eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log('data.status', data.status);
-      if (data.status === 'SUCCESS') {
-        router.push('/success');
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('SSE message received:', data);
+          if (data.status === 'SUCCESS') {
+            console.log('Order successful, redirecting to /success');
+            router.push('/success');
+            eventSource.close();
+          }
+        } catch (error) {
+          console.error('Error parsing SSE message:', error);
+        }
+      };
+
+      eventSource.onerror = () => {
+        console.error('SSE connection error for orderCode:', orderCode);
         eventSource.close();
-      }
+        // Attempt to reconnect after a delay
+        setTimeout(connectSSE, 5000);
+      };
+
+      // Clean up on unmount
+      return () => {
+        console.log('Closing SSE connection for orderCode:', orderCode);
+        eventSource.close();
+      };
     };
 
-    eventSource.onerror = () => {
-      console.error('SSE error, closing connection');
-      eventSource.close();
-    };
-
-    // Đóng kết nối khi component unmount
-    return () => {
-      eventSource.close();
-    };
-  }, [orderCode, qrUrl, router]);
+    const cleanup = connectSSE();
+    return cleanup;
+  }, [orderCode, router]);
 
   useEffect(() => {
     if (selectedAddressId) {
