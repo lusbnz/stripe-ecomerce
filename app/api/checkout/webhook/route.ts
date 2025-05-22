@@ -2,6 +2,8 @@ import { clients } from '@/lib/sse-client';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface WebhookRequestBody {
+  description?: string;
+  content?: string;
   data?: {
     description?: string;
     content?: string;
@@ -18,12 +20,12 @@ interface WebhookData {
 export async function POST(req: NextRequest) {
   const body: WebhookRequestBody = await req.json();
 
-  const description = body.data?.description || body.data?.content || "";
+  const description = body.description || body.content || body.data?.description || body.data?.content || "";
   const orderCodeMatch = description.match(/ORD\d+/);
   const orderCode = orderCodeMatch?.[0];
 
   if (!orderCode) {
-    console.log('[Webhook] No orderCode found in description:', description);
+    console.log('[Webhook] No orderCode found in description:', body, description);
     return NextResponse.json({ success: false });
   }
 
