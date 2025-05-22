@@ -11,8 +11,6 @@ export async function GET() {
         payment_method, description, address_id, status, created_at, updated_at
       `);
 
-      console.log('data', data);
-
     if (error) throw error;
 
     const orders = (data).map((order) => ({

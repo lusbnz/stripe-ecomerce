@@ -27,6 +27,11 @@ export interface Address {
   city: string;
 }
 
+interface SSEData {
+  status: 'SUCCESS' | 'FAIL' | string;
+  [key: string]: unknown;
+}
+
 function CheckoutPageContent() {
   const router = useRouter();
   const [items, setItems] = useState<Product[]>([]);
@@ -69,35 +74,29 @@ function CheckoutPageContent() {
     if (!orderCode) return;
 
     const connectSSE = () => {
-      console.log(`Establishing SSE for orderCode: ${orderCode}`);
-      const eventSource = new EventSource(`/api/checkout?orderCode=${orderCode}`);
+      console.log(`Connecting SSE for orderCode: ${orderCode}`);
+      const eventSource = new EventSource(`/api/checkout/sse?orderCode=${orderCode}`);
 
-      eventSource.onmessage = (event) => {
+      eventSource.onmessage = (event: MessageEvent<string>) => {
         try {
-          const data = JSON.parse(event.data);
+          const data: SSEData = JSON.parse(event.data);
           console.log('SSE message received:', data);
           if (data.status === 'SUCCESS') {
-            console.log('Order successful, redirecting to /success');
             router.push('/success');
             eventSource.close();
           }
         } catch (error) {
-          console.error('Error parsing SSE message:', error);
+          console.error('Error parsing SSE data:', error);
         }
       };
 
       eventSource.onerror = () => {
-        console.error('SSE connection error for orderCode:', orderCode);
+        console.error('SSE connection error, retrying...');
         eventSource.close();
-        // Attempt to reconnect after a delay
-        setTimeout(connectSSE, 5000);
+        setTimeout(connectSSE, 3000);
       };
 
-      // Clean up on unmount
-      return () => {
-        console.log('Closing SSE connection for orderCode:', orderCode);
-        eventSource.close();
-      };
+      return () => eventSource.close();
     };
 
     const cleanup = connectSSE();
@@ -182,12 +181,12 @@ function CheckoutPageContent() {
   };
 
   const handleCheckout = async () => {
-    const user = JSON.parse(localStorage.getItem('ecom_user') || '{}');
+    const user = JSON.parse(localStorage.getItem("ecom_user") || "{}");
     if (!user.id) {
-      redirect('/sign-in');
+      redirect("/sign-in");
     }
     if (!isAddressValid) {
-      alert('Vui lòng điền đầy đủ thông tin địa chỉ giao hàng');
+      alert("Vui lòng điền đầy đủ thông tin địa chỉ giao hàng");
       return;
     }
 
@@ -196,9 +195,9 @@ function CheckoutPageContent() {
 
     if (!selectedAddressId) {
       try {
-        const response = await fetch('/api/addresses', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const response = await fetch("/api/addresses", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userId: user.id,
             full_address: address.full_address,
@@ -211,17 +210,17 @@ function CheckoutPageContent() {
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to save address');
+          throw new Error(errorData.error || "Failed to save address");
         }
 
         const { address: newAddress } = await response.json();
         if (!newAddress?.id) {
-          throw new Error('Address creation succeeded but no ID returned');
+          throw new Error("Address creation succeeded but no ID returned");
         }
         addressId = newAddress.id;
         setAddresses((prev) => [...prev, newAddress]);
       } catch (error) {
-        console.error(error || 'Failed to save address');
+        console.error(error || "Failed to save address");
         setLoading(false);
         return;
       }
@@ -244,15 +243,15 @@ function CheckoutPageContent() {
 
     try {
       // Create order
-      const orderResponse = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const orderResponse = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!orderResponse.ok) {
         const errorData = await orderResponse.json();
-        throw new Error(errorData.error || 'Failed to create order');
+        throw new Error(errorData.error || "Failed to create order");
       }
 
       // Send order confirmation email
@@ -260,7 +259,7 @@ function CheckoutPageContent() {
         userId: user.id,
         orderCode: referenceCode,
         totalAmount,
-        products: selectedItems.map(item => ({
+        products: selectedItems.map((item) => ({
           id: item.id,
           name: item.name,
           pricing: item.pricing,
@@ -275,24 +274,27 @@ function CheckoutPageContent() {
         },
       };
 
-      const emailResponse = await fetch('/api/send-order-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const emailResponse = await fetch("/api/send-order-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(emailPayload),
       });
 
       if (!emailResponse.ok) {
         const errorData = await emailResponse.json();
-        console.error('Failed to send order confirmation email:', errorData.error);
+        console.error(
+          "Failed to send order confirmation email:",
+          errorData.error
+        );
         // Continue even if email fails to avoid blocking checkout
       } else {
-        console.log('Order confirmation email sent');
+        console.log("Order confirmation email sent");
       }
 
       // Generate QR code
       const orderId = referenceCode;
-      const acc = 'VQRQACMGC9486';
-      const bank = 'MBBank';
+      const acc = "VQRQACMGC9486";
+      const bank = "MBBank";
       const amount = totalAmount;
       const des = orderId;
       const redirectUrl = encodeURIComponent(
@@ -302,8 +304,8 @@ function CheckoutPageContent() {
       const qr = `https://qr.sepay.vn/img?acc=${acc}&bank=${bank}&amount=${amount}&des=${des}&redirect=${redirectUrl}`;
       setQrUrl(qr);
     } catch (error) {
-      console.error('Error during checkout:', error);
-      alert('Failed to process checkout');
+      console.error("Error during checkout:", error);
+      alert("Failed to process checkout");
     } finally {
       setLoading(false);
     }

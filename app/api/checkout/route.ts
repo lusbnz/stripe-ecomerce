@@ -33,42 +33,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    // const products = orderData.products || [];
-    // if (products.length > 0) {
-    //   for (const product of products) {
-    //     const { id, quantity } = product;
-
-    //     const { data: productData, error: productError } = await supabase
-    //       .from('products')
-    //       .select('quantity')
-    //       .eq('id', id)
-    //       .single();
-
-    //     if (productError || !productData) {
-    //       console.error(`[Webhook] Product ${id} not found:`, productError);
-    //       continue;
-    //     }
-
-    //     const newQuantity = productData.quantity - quantity;
-    //     if (newQuantity < 0) {
-    //       console.error(`[Webhook] Insufficient quantity for product ${id}`);
-    //       continue;
-    //     }
-
-    //     const { error: updateProductError } = await supabase
-    //       .from('products')
-    //       .update({ quantity: newQuantity })
-    //       .eq('id', id);
-
-    //     if (updateProductError) {
-    //       console.error(`[Webhook] Error updating product ${id}:`, updateProductError);
-    //       continue;
-    //     }
-
-    //     console.log(`[Webhook] Updated product ${id} quantity to ${newQuantity}`);
-    //   }
-    // }
-
     console.log('[Webhook] Found order:', orderData);
 
     const { data: updatedOrder, error: updateError } = await supabase
