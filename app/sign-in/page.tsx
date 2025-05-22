@@ -43,23 +43,31 @@ export default function LoginPage() {
       return;
     }
 
-    const res = await fetch('/api/users', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      console.log('Sending request to /api/users with:', { email, password });
+      const res = await fetch('/api/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    const data = await res.json();
+      console.log('Response status:', res.status);
+      const data = await res.json();
+      console.log('Response data:', data);
 
-    if (res.ok) {
-      if (!data.user.is_verified) {
-        setErrorMsg('Vui lòng xác minh email trước khi đăng nhập');
-        return;
+      if (res.ok) {
+        if (!data.user.is_verified) {
+          setErrorMsg('Vui lòng xác minh email trước khi đăng nhập');
+          return;
+        }
+        localStorage.setItem('ecom_user', JSON.stringify(data.user));
+        router.push('/');
+      } else {
+        setErrorMsg(data.error || 'Đăng nhập thất bại');
       }
-      localStorage.setItem('ecom_user', JSON.stringify(data.user));
-      router.push('/');
-    } else {
-      setErrorMsg(data.error || 'Đăng nhập thất bại');
+    } catch (error) {
+      console.error('Login error:', error);
+      setErrorMsg('Lỗi kết nối. Vui lòng kiểm tra mạng hoặc thử lại sau.');
     }
   };
 
@@ -100,12 +108,19 @@ export default function LoginPage() {
         Đăng nhập
       </Button>
 
-      <p className="text-sm text-center">
-        Chưa có tài khoản?{' '}
-        <Link href="/sign-up" className="text-blue-500 hover:underline">
-          Đăng ký ngay
-        </Link>
-      </p>
+      <div className="text-sm text-center space-y-2">
+        <p>
+          <Link href="/forgot-password" className="text-blue-500 hover:underline">
+            Quên mật khẩu?
+          </Link>
+        </p>
+        <p>
+          Chưa có tài khoản?{' '}
+          <Link href="/sign-up" className="text-blue-500 hover:underline">
+            Đăng ký ngay
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }
