@@ -22,7 +22,7 @@ const teamMembers: TeamMember[] = [
   },
   {
     name: "Nguyễn Duy Mạnh",
-    role: "B21DCCNXXX",
+    role: "B21DCCN512",
     image: "/about.jpg",
   },
 ];
