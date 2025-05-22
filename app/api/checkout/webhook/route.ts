@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 interface WebhookRequestBody {
   data?: {
     description?: string;
+    content?: string;
     [key: string]: unknown;
   };
   [key: string]: unknown;
@@ -17,7 +18,7 @@ interface WebhookData {
 export async function POST(req: NextRequest) {
   const body: WebhookRequestBody = await req.json();
 
-  const description = body.data?.description ?? '';
+  const description = body.data?.description || body.data?.content || "";
   const orderCodeMatch = description.match(/ORD\d+/);
   const orderCode = orderCodeMatch?.[0];
 

@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 
 export default function SignupPage() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string; password?: string }>({});
 
   const validateEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -22,6 +23,10 @@ export default function SignupPage() {
     setFieldErrors({});
 
     const errors: typeof fieldErrors = {};
+
+    if (!name) {
+      errors.name = 'Họ tên không được để trống';
+    } 
 
     if (!email) {
       errors.email = 'Email không được để trống';
@@ -43,13 +48,14 @@ export default function SignupPage() {
     const res = await fetch('/api/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: email, email, password, role: 'CUSTOMER' }),
+      body: JSON.stringify({ name, email, password, role: 'CUSTOMER' }),
     });
 
     const data = await res.json();
 
     if (res.ok) {
       setSuccessMsg('Đăng ký thành công! Vui lòng kiểm tra email để xác minh tài khoản.');
+      setName('');
       setEmail('');
       setPassword('');
     } else {
@@ -60,6 +66,22 @@ export default function SignupPage() {
   return (
     <div className="max-w-md mx-auto min-h-[60vh] mt-20 space-y-4">
       <h1 className="text-xl font-bold text-center">Đăng ký</h1>
+
+      <div className="space-y-2">
+        <Label htmlFor="name">Name</Label>
+        <Input
+          id="name"
+          placeholder="Quốc Việt"
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value);
+            setFieldErrors((prev) => ({ ...prev, name: undefined }));
+            setErrorMsg('');
+            setSuccessMsg('');
+          }}
+        />
+        {fieldErrors.name && <p className="text-sm text-red-500">{fieldErrors.name}</p>}
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
