@@ -120,8 +120,7 @@ export async function PUT(req: NextRequest) {
     if (name) updateData.name = name;
     if (email) updateData.email = email;
     if (role) updateData.role = role;
-    if (password) updateData.password = await bcrypt.hash(password, 10);
-    updateData.updated_at = new Date().toISOString();
+    if (password) updateData.password = password;
 
     const { data: updatedUser, error } = await supabase
       .from('users')

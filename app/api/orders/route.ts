@@ -8,9 +8,10 @@ export async function GET() {
       .select(`
         id, amount, customer_id,
         users(name),
-        payment_method, description, address_id,
-        shipping_details, status, created_at, updated_at
+        payment_method, description, address_id, status, created_at, updated_at
       `);
+
+      console.log('data', data);
 
     if (error) throw error;
 

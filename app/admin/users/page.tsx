@@ -80,7 +80,7 @@ function UserModal({
     if (!formData.name.trim()) return alert("Name is required");
     if (!formData.email.trim()) return alert("Email is required");
     if (!formData.role.trim()) return alert("Role is required");
-    if (!formData.password.trim()) {
+    if (!formData.name.trim() && !formData.password.trim()) {
       return alert("Password is required for new users");
     }
     onSave(formData);
@@ -221,6 +221,7 @@ export default function UsersPage() {
     const payload = {
       ...user,
       id: isNew ? undefined : parseInt(user.id),
+      password: (isNew || user?.password) ? user?.password : undefined
     };
 
     fetch(url, {
