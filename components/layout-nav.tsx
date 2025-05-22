@@ -7,7 +7,7 @@ import { Footer } from "@/components/footer";
 export function LayoutWithNav({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  const hideNavFooter = pathname === "/sign-in" || pathname === "/sign-up";
+  const hideNavFooter = pathname === "/sign-in" || pathname === "/sign-up" || pathname === "/verify";
   const isAdmin = pathname.startsWith("/admin");
 
   if (isAdmin) {

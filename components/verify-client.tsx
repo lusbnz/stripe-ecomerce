@@ -1,14 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 export default function VerifyClient() {
-  const { token } = useParams();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
   const [message, setMessage] = useState('Đang xác minh...');
   const [error, setError] = useState('');
+
+  console.log('token', token);
 
   useEffect(() => {
     if (!token) {
