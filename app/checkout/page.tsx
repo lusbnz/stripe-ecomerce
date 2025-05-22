@@ -9,7 +9,7 @@ import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { Product } from "../admin/products/page";
 import { Input } from "@/components/ui/input";
-import { redirect, useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -27,13 +27,7 @@ export interface Address {
   city: string;
 }
 
-interface SSEData {
-  status: 'SUCCESS' | 'FAIL' | string;
-  [key: string]: unknown;
-}
-
 function CheckoutPageContent() {
-  const router = useRouter();
   const [items, setItems] = useState<Product[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
@@ -49,7 +43,6 @@ function CheckoutPageContent() {
     region: "",
     city: "",
   });
-  const [orderCode, setOrderCode] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem("cart");
@@ -69,39 +62,6 @@ function CheckoutPageContent() {
         });
     }
   }, []);
-
-  useEffect(() => {
-    if (!orderCode) return;
-
-    const connectSSE = () => {
-      console.log(`Connecting SSE for orderCode: ${orderCode}`);
-      const eventSource = new EventSource(`/api/checkout/sse?orderCode=${orderCode}`);
-
-      eventSource.onmessage = (event: MessageEvent<string>) => {
-        try {
-          const data: SSEData = JSON.parse(event.data);
-          console.log('SSE message received:', data);
-          if (data.status === 'SUCCESS') {
-            router.push('/success');
-            eventSource.close();
-          }
-        } catch (error) {
-          console.error('Error parsing SSE data:', error);
-        }
-      };
-
-      eventSource.onerror = () => {
-        console.error('SSE connection error, retrying...');
-        eventSource.close();
-        setTimeout(connectSSE, 3000);
-      };
-
-      return () => eventSource.close();
-    };
-
-    const cleanup = connectSSE();
-    return cleanup;
-  }, [orderCode, router]);
 
   useEffect(() => {
     if (selectedAddressId) {
@@ -232,7 +192,6 @@ function CheckoutPageContent() {
     );
 
     const referenceCode = `ORD${Date.now()}`;
-    setOrderCode(referenceCode);
     const payload = {
       amount: totalAmount,
       customer_id: user.id,

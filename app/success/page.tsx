@@ -1,9 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 
 function SuccessPageContent() {
+
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify([]));
+  }, []);
+
   return (
     <div className="container mx-auto px-4 py-8 text-center">
       <h1 className="text-3xl font-bold mb-4">Payment Successful!</h1>

@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
       <p><strong>Tổng cộng:</strong> ${formatNumber(totalAmount)} VNĐ</p>
       <h3>Địa chỉ giao hàng:</h3>
       <p>${address.full_address}, ${address.street}, ${address.district}, ${address.region}, ${address.city}</p>
-      <p>Chúng tôi sẽ thông báo khi đơn hàng được xử lý.</p>
+      <p>Xác nhận mua hàng thành công tại: ${process.env.NEXT_PUBLIC_BASE_URL}</p>
       <p>Trân trọng,<br/>Quốc Việt</p>
     `;
 
