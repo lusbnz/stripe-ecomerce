@@ -1,5 +1,5 @@
+import { clients } from '@/lib/sse-client';
 import { NextRequest, NextResponse } from 'next/server';
-import { clients } from '../sse/route';
 
 interface WebhookRequestBody {
   data?: {

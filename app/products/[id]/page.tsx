@@ -10,7 +10,8 @@ import { useCallback, useEffect, useState } from "react";
 export default function ProductPage() {
   const { id } = useParams();
 
-  const [products, setProducts] = useState<Product>();
+  const [products, setProducts] = useState<Product | null>(null);
+  // const [products, setProducts] = useState<Product>();
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -69,7 +70,7 @@ export default function ProductPage() {
             <Skeleton className="h-4 w-1/2" />
           </div>
         </>
-      ) : (
+      ) : !!products ? (
         <>
           <ProductDetail product={products} />
 
@@ -85,6 +86,8 @@ export default function ProductPage() {
             </div>
           )}
         </>
+      ) : (
+        <></>
       )}
     </div>
   );
