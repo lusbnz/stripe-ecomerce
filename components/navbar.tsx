@@ -111,9 +111,9 @@ export const Navbar = () => {
           {/* <Link href="/transactions" className="hover:text-blue-600 cursor-pointer">
             Transactions
           </Link> */}
-          {/* <Link href="/dashboard" className="hover:text-blue-600 cursor-pointer">
+          <Link href="/dashboard" className="hover:text-blue-600 cursor-pointer">
             Dashboard
-          </Link> */}
+          </Link>
           {user?.role === "ADMIN" && (
             <Link
               href="/admin/products"
